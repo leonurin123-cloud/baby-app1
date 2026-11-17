@@ -7,24 +7,18 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#12141d">
   <title>Дневник малыша</title>
-  <script src="https://jsdelivr.net"></script>
   <style>
     :root {
-      --bg: #12141d;
-      --card: #1c1f2e;
-      --accent: #6c5ce7;
-      --sleep: #0984e3;
-      --wake: #00b894;
-      --text: #f5f6fa;
-      --muted: #8395a7;
-      --danger: #d63031;
+      --bg: #12141d; --card: #1c1f2e; --accent: #6c5ce7;
+      --sleep: #0984e3; --wake: #00b894; --text: #f5f6fa;
+      --muted: #8395a7; --danger: #d63031;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
     h1 { font-size: 22px; text-align: center; margin-bottom: 16px; font-weight: 700; }
     
     .tabs { display: flex; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-    .tab { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--muted); transition: 0.2s; }
+    .tab { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--muted); transition: 0.2s; font-size: 14px; }
     .tab.active { background: var(--accent); color: #fff; }
 
     .section { display: none; }
@@ -33,12 +27,14 @@
     .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
     .status-label { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
     .timer { font-size: 42px; font-weight: 800; font-variant-numeric: tabular-nums; margin-bottom: 20px; }
+    .summary { font-size: 14px; color: var(--muted); margin-top: 14px; }
     
     .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; color: #fff; cursor: pointer; transition: 0.2s; }
     .btn:active { transform: scale(0.98); }
     .btn-sleep { background: var(--sleep); }
     .btn-wake { background: var(--wake); }
     .btn-save { background: var(--accent); margin-top: 10px; }
+    .btn-sec { background: #2f3542; font-size: 15px; padding: 14px; margin-bottom: 10px; }
 
     .list-title { font-size: 16px; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
     .item { background: var(--card); padding: 14px 16px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -58,16 +54,18 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('sleep', this)">Сон</div>
     <div class="tab" onclick="switchTab('growth', this)">Рост и вес</div>
+    <div class="tab" onclick="switchTab('sync', this)">Обмен</div>
   </div>
 
   <!-- ВКЛАДКА СОН -->
   <div id="sleep-sec" class="section active">
     <div class="card">
-      <div id="status-text" class="status-label">Загрузка...</div>
+      <div id="status-text" class="status-label">Готов к записи</div>
       <div id="timer-display" class="timer">00:00:00</div>
       <button id="sleep-btn" class="btn btn-sleep" onclick="toggleSleep()">Уснул</button>
+      <div id="today-summary" class="summary">Сон за сегодня: 0 ч 0 мин</div>
     </div>
-    <div class="list-title">Последние сны</div>
+    <div class="list-title">История снов</div>
     <div id="sleep-list"></div>
   </div>
 
@@ -87,18 +85,28 @@
     <div id="growth-list"></div>
   </div>
 
+  <!-- ВКЛАДКА ОБМЕН МЕЖДУ ТЕЛЕФОНАМИ -->
+  <div id="sync-sec" class="section">
+    <div class="card">
+      <div class="status-label" style="margin-bottom:14px;">Передача данных жене / мужу</div>
+      <button class="btn btn-save" style="margin-bottom:12px;" onclick="copySummary()">Скопировать сводку за сегодня</button>
+      <button class="btn btn-sec" onclick="exportData()">Скачать файл резервной копии</button>
+      <button class="btn btn-sec" onclick="document.getElementById('import-file').click()">Загрузить файл от партнера</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <div class="item-sub" style="margin-top:10px;">Данные хранятся в памяти этого телефона и не требуют интернета.</div>
+    </div>
+  </div>
+
 <script>
-  // ВСТАВЬ СВОЙ ДЛИННЫЙ PROJECT URL ИЗ SUPABASE (с буквами перед .supabase.co):
-  const SUPABASE_URL = 'https://gfqhkcwzzmeumhcnamcy.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_anXq6qGLiQtfyRAqGbb-zg_H7lHb9o2';
-
-  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  let activeSleep = null;
-  let lastWakeTime = null;
+  const STORAGE_KEY = 'baby_tracker_data_v1';
+  let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { sleeps: [], growths: [] };
   let timerInterval = null;
 
   document.getElementById('g-date').valueAsDate = new Date();
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
 
   function switchTab(tab, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -117,180 +125,186 @@
   }
 
   function formatTime(isoStr) {
-    const d = new Date(isoStr);
-    return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    return new Date(isoStr).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   }
 
   function formatDate(isoStr) {
-    const d = new Date(isoStr);
-    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    return new Date(isoStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   }
 
-  // --- ЛОГИКА СНА ---
-  async function loadSleep() {
-    const { data, error } = await db
-      .from('sleep_logs')
-      .select('*')
-      .order('start_time', { ascending: false })
-      .limit(20);
+  function renderSleep() {
+    const activeSleep = state.sleeps.find(item => !item.end_time) || null;
+    const finished = state.sleeps.filter(item => item.end_time).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+    const lastWakeTime = finished.length > 0 ? finished.at(0).end_time : null;
 
-    if (error) {
-      document.getElementById('status-text').textContent = 'Ошибка базы: ' + error.message;
-      return console.error(error);
-    }
-
-    activeSleep = data.find(item => item.end_time === null) || null;
-    const finished = data.filter(item => item.end_time !== null);
-    lastWakeTime = finished.length > 0 ? finished[0].end_time : null;
-
-    updateSleepUI();
-    renderSleepList(finished);
-  }
-
-  function updateSleepUI() {
     const btn = document.getElementById('sleep-btn');
     const status = document.getElementById('status-text');
     const display = document.getElementById('timer-display');
-
     clearInterval(timerInterval);
 
     if (activeSleep) {
       status.textContent = 'Малыш спит';
       btn.textContent = 'Проснулся';
       btn.className = 'btn btn-wake';
-      timerInterval = setInterval(() => {
-        display.textContent = formatDuration(Date.now() - new Date(activeSleep.start_time));
-      }, 1000);
-      display.textContent = formatDuration(Date.now() - new Date(activeSleep.start_time));
+      const tick = () => display.textContent = formatDuration(Date.now() - new Date(activeSleep.start_time));
+      tick();
+      timerInterval = setInterval(tick, 1000);
     } else {
       btn.textContent = 'Уснул';
       btn.className = 'btn btn-sleep';
       if (lastWakeTime) {
         status.textContent = 'Бодрствует';
-        timerInterval = setInterval(() => {
-          display.textContent = formatDuration(Date.now() - new Date(lastWakeTime));
-        }, 1000);
-        display.textContent = formatDuration(Date.now() - new Date(lastWakeTime));
+        const tick = () => display.textContent = formatDuration(Date.now() - new Date(lastWakeTime));
+        tick();
+        timerInterval = setInterval(tick, 1000);
       } else {
         status.textContent = 'Готов к записи';
         display.textContent = '00:00:00';
       }
     }
-  }
 
-  async function toggleSleep() {
-    const btn = document.getElementById('sleep-btn');
-    btn.disabled = true;
+    const todayStr = new Date().toDateString();
+    let todayMs = 0;
+    finished.forEach(item => {
+      if (new Date(item.start_time).toDateString() === todayStr) {
+        todayMs += new Date(item.end_time) - new Date(item.start_time);
+      }
+    });
+    const tMins = Math.round(todayMs / 60000);
+    document.getElementById('today-summary').textContent = `Сон за сегодня: ${Math.floor(tMins / 60)} ч ${tMins % 60} мин`;
 
-    if (activeSleep) {
-      await db.from('sleep_logs')
-        .update({ end_time: new Date().toISOString() })
-        .eq('id', activeSleep.id);
-    } else {
-      await db.from('sleep_logs')
-        .insert([{ start_time: new Date().toISOString() }]);
-    }
-
-    btn.disabled = false;
-    loadSleep();
-  }
-
-  async function deleteSleep(id) {
-    if (!confirm('Удалить запись о сне?')) return;
-    await db.from('sleep_logs').delete().eq('id', id);
-    loadSleep();
-  }
-
-  function renderSleepList(items) {
     const list = document.getElementById('sleep-list');
-    if (items.length === 0) {
+    if (finished.length === 0) {
       list.innerHTML = '<div class="item-sub" style="text-align:center;">Записей пока нет</div>';
       return;
     }
-    list.innerHTML = items.map(item => {
-      const durMs = new Date(item.start_time);
-      const mins = Math.round(durMs / 60000);
+
+    list.innerHTML = finished.map(item => {
+      const mins = Math.round((new Date(item.end_time) - new Date(item.start_time)) / 60000);
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       const durText = h > 0 ? `${h} ч ${m} мин` : `${m} мин`;
-
       return `
         <div class="item">
           <div>
             <div class="item-main">${durText}</div>
             <div class="item-sub">${formatDate(item.start_time)} • ${formatTime(item.start_time)} – ${formatTime(item.end_time)}</div>
           </div>
-          <button class="del-btn" onclick="deleteSleep(${item.id})">✕</button>
+          <button class="del-btn" onclick="deleteSleep('${item.id}')">✕</button>
         </div>
       `;
     }).join('');
   }
 
-  // --- ЛОГИКА РОСТА И ВЕСА ---
-  async function loadGrowth() {
-    const { data, error } = await db
-      .from('growth_logs')
-      .select('*')
-      .order('date', { ascending: false })
-      .order('id', { ascending: false });
+  function toggleSleep() {
+    const activeSleep = state.sleeps.find(item => !item.end_time);
+    if (activeSleep) {
+      activeSleep.end_time = new Date().toISOString();
+    } else {
+      state.sleeps.unshift({ id: String(Date.now()), start_time: new Date().toISOString(), end_time: null });
+    }
+    saveState();
+    renderSleep();
+  }
 
-    if (error) return console.error(error);
+  function deleteSleep(id) {
+    if (!confirm('Удалить запись о сне?')) return;
+    state.sleeps = state.sleeps.filter(item => item.id !== id);
+    saveState();
+    renderSleep();
+  }
 
+  function renderGrowth() {
+    const sorted = [...state.growths].sort((a, b) => new Date(b.date) - new Date(a.date));
     const list = document.getElementById('growth-list');
-    if (data.length === 0) {
+    if (sorted.length === 0) {
       list.innerHTML = '<div class="item-sub" style="text-align:center;">Замеров пока нет</div>';
       return;
     }
-
-    list.innerHTML = data.map(item => {
+    list.innerHTML = sorted.map(item => {
       const parts = [];
       if (item.weight_kg) parts.push(`${item.weight_kg} кг`);
       if (item.height_cm) parts.push(`${item.height_cm} см`);
-
       return `
         <div class="item">
           <div>
             <div class="item-main">${parts.join(' • ')}</div>
             <div class="item-sub">${formatDate(item.date)}</div>
           </div>
-          <button class="del-btn" onclick="deleteGrowth(${item.id})">✕</button>
+          <button class="del-btn" onclick="deleteGrowth('${item.id}')">✕</button>
         </div>
       `;
     }).join('');
   }
 
-  async function addGrowth() {
+  function addGrowth() {
     const date = document.getElementById('g-date').value;
     const weight = document.getElementById('g-weight').value;
     const height = document.getElementById('g-height').value;
-
     if (!weight && !height) return alert('Введите вес или рост');
 
-    await db.from('growth_logs').insert([{
-      date: date,
+    state.growths.unshift({
+      id: String(Date.now()),
+      date,
       weight_kg: weight ? parseFloat(weight) : null,
       height_cm: height ? parseFloat(height) : null
-    }]);
-
+    });
+    saveState();
     document.getElementById('g-weight').value = '';
     document.getElementById('g-height').value = '';
-    loadGrowth();
+    renderGrowth();
   }
 
-  async function deleteGrowth(id) {
+  function deleteGrowth(id) {
     if (!confirm('Удалить замер?')) return;
-    await db.from('growth_logs').delete().eq('id', id);
-    loadGrowth();
+    state.growths = state.growths.filter(item => item.id !== id);
+    saveState();
+    renderGrowth();
   }
 
-  // --- ПОДПИСКА НА ОБНОВЛЕНИЯ В РЕАЛЬНОМ ВРЕМЕНИ ---
-  db.channel('schema-db-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'sleep_logs' }, () => loadSleep())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'growth_logs' }, () => loadGrowth())
-    .subscribe();
+  function copySummary() {
+    const todayStr = new Date().toDateString();
+    const todaySleeps = state.sleeps.filter(s => s.end_time && new Date(s.start_time).toDateString() === todayStr);
+    const lines = ['Сводка по сну за сегодня:'];
+    todaySleeps.reverse().forEach(s => {
+      const mins = Math.round((new Date(s.end_time) - new Date(s.start_time)) / 60000);
+      lines.push(`• ${formatTime(s.start_time)} – ${formatTime(s.end_time)} (${mins} мин)`);
+    });
+    if (todaySleeps.length === 0) lines.push('Записей за сегодня пока нет.');
+    navigator.clipboard.writeText(lines.join('\n')).then(() => alert('Сводка скопирована! Вставьте ее в сообщение жене.'));
+  }
 
-  loadSleep();
-  loadGrowth();
+  function exportData() {
+    const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `baby-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  }
+
+  function importData(e) {
+    const file = e.target.files.item(0);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const imported = JSON.parse(evt.target.result);
+        if (imported.sleeps && imported.growths) {
+          state = imported;
+          saveState();
+          renderSleep();
+          renderGrowth();
+          alert('Данные успешно загружены!');
+        }
+      } catch (err) {
+        alert('Неверный формат файла');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  renderSleep();
+  renderGrowth();
 </script>
 </body>
 </html>
