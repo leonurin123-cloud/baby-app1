@@ -89,7 +89,7 @@
 
 <script>
   // ВСТАВЬ СВОЙ ДЛИННЫЙ PROJECT URL ИЗ SUPABASE (с буквами перед .supabase.co):
-  const SUPABASE_URL = 'https://gfqhkcwzzmeumhcnamcy.supabase.co/rest/v1/';
+  const SUPABASE_URL = 'https://gfqhkcwzzmeumhcnamcy.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_anXq6qGLiQtfyRAqGbb-zg_H7lHb9o2';
 
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -208,7 +208,7 @@
       return;
     }
     list.innerHTML = items.map(item => {
-      const durMs = new Date(item.end_time) - new Date(item.start_time);
+      const durMs = new Date(item.start_time);
       const mins = Math.round(durMs / 60000);
       const h = Math.floor(mins / 60);
       const m = mins % 60;
@@ -258,29 +258,39 @@
       `;
     }).join('');
   }
- async function addGrowth() {
+
+  async function addGrowth() {
     const date = document.getElementById('g-date').value;
     const weight = document.getElementById('g-weight').value;
-const height = document.getElementById('g-height').value;
-if (!weight && !height) return alert('Введите вес или рост');
-await db.from('growth_logs').insert([{
-date: date,
-weight_kg: weight ? parseFloat(weight) : null,
-height_cm: height ? parseFloat(height) : null
-}]);
-document.getElementById('g-weight').value = '';
-document.getElementById('g-height').value = '';
-loadGrowth();
-}
-async function deleteGrowth(id) {
-if (!confirm('Удалить замер?')) return;
-await db.from('growth_logs').delete().eq('id', id);
-loadGrowth();
-}
-// --- ПОДПИСКА НА ОБНОВЛЕНИЯ В РЕАЛЬНОМ ВРЕМЕНИ ---
-db.channel('schema-db-changes')
-.on('postgres_changes', { event: '', schema: 'public', table: 'sleep_logs' }, () => loadSleep())
-.on('postgres_changes', { event: '', schema: 'public', table: 'growth_logs' }, () => loadGrowth())
-.subscribe();
-loadSleep();
-loadGrowth();
+    const height = document.getElementById('g-height').value;
+
+    if (!weight && !height) return alert('Введите вес или рост');
+
+    await db.from('growth_logs').insert([{
+      date: date,
+      weight_kg: weight ? parseFloat(weight) : null,
+      height_cm: height ? parseFloat(height) : null
+    }]);
+
+    document.getElementById('g-weight').value = '';
+    document.getElementById('g-height').value = '';
+    loadGrowth();
+  }
+
+  async function deleteGrowth(id) {
+    if (!confirm('Удалить замер?')) return;
+    await db.from('growth_logs').delete().eq('id', id);
+    loadGrowth();
+  }
+
+  // --- ПОДПИСКА НА ОБНОВЛЕНИЯ В РЕАЛЬНОМ ВРЕМЕНИ ---
+  db.channel('schema-db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sleep_logs' }, () => loadSleep())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'growth_logs' }, () => loadGrowth())
+    .subscribe();
+
+  loadSleep();
+  loadGrowth();
+</script>
+</body>
+</html>
