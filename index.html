@@ -4,116 +4,521 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#12141d">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#F7F7F5">
   <title>Дневник малыша</title>
   <style>
     :root {
-      --bg: #12141d; --card: #1c1f2e; --accent: #6c5ce7;
-      --sleep: #0984e3; --wake: #00b894; --text: #f5f6fa;
-      --muted: #8395a7; --danger: #d63031;
+      --bg: #F7F7F5; --card: #FFFFFF; --tile: #EFEFEB;
+      --olive: #7B925E; --olive-light: #E8EDE2; --dark: #333531;
+      --text: #222420; --muted: #7C7F78; --border: #E5E5E0;
+      --danger: #D64545; --warn-bg: #FDF3D7; --warn-text: #9E7316;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
-    h1 { font-size: 22px; text-align: center; margin-bottom: 16px; font-weight: 700; }
-    
-    .tabs { display: flex; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-    .tab { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--muted); transition: 0.2s; font-size: 14px; }
-    .tab.active { background: var(--accent); color: #fff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); max-width: 500px; margin: 0 auto; padding: 16px 16px 100px; }
 
-    .section { display: none; }
-    .section.active { display: block; }
+    .top-bar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .greet-sub { font-size: 14px; color: var(--muted); }
+    .greet-title { font-size: 26px; font-weight: 600; color: var(--text); margin-top: 2px; letter-spacing: -0.3px; }
+    .top-icons { display: flex; gap: 10px; }
+    .icon-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; color: var(--text); }
 
-    .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
-    .status-label { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .timer { font-size: 42px; font-weight: 800; font-variant-numeric: tabular-nums; margin-bottom: 20px; }
-    .summary { font-size: 14px; color: var(--muted); margin-top: 14px; }
-    
-    .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; color: #fff; cursor: pointer; transition: 0.2s; }
-    .btn:active { transform: scale(0.98); }
-    .btn-sleep { background: var(--sleep); }
-    .btn-wake { background: var(--wake); }
-    .btn-save { background: var(--accent); margin-top: 10px; }
-    .btn-sec { background: #2f3542; font-size: 15px; padding: 14px; margin-bottom: 10px; }
+    .baby-card { background: var(--card); border-radius: 22px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); cursor: pointer; }
+    .baby-left { display: flex; align-items: center; gap: 12px; }
+    .baby-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--olive); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .baby-name { font-size: 20px; font-weight: 600; color: var(--text); }
+    .baby-age { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .baby-plus { font-size: 22px; color: var(--muted); padding: 4px 8px; }
 
-    .list-title { font-size: 16px; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
-    .item { background: var(--card); padding: 14px 16px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .info-card { background: var(--card); border-radius: 22px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .info-tag { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .info-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; line-height: 1.25; }
+    .info-desc { font-size: 14px; color: var(--muted); line-height: 1.4; margin-bottom: 14px; }
+    .btn-dark { width: 100%; background: var(--dark); color: #fff; border: none; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-olive { width: 100%; background: var(--olive); color: #fff; border: none; border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .btn-light { width: 100%; background: var(--tile); color: var(--text); border: none; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-pill { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-pill.olive { background: var(--olive); color: #fff; border-color: var(--olive); }
+
+    .sec-heading { font-size: 20px; font-weight: 600; margin: 18px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tracker-tile { background: var(--tile); border-radius: 18px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.15s; }
+    .tracker-tile:active { transform: scale(0.98); }
+    .tracker-tile.active-sleep { background: var(--olive-light); border: 1px solid var(--olive); }
+    .tile-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--olive); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .tile-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .tile-sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.25; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .list-item { background: var(--card); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.02); }
+    .list-item.today-event { border: 1.5px solid var(--olive); background: var(--olive-light); }
     .item-main { font-size: 16px; font-weight: 600; }
-    .item-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
-    .del-btn { background: none; border: none; color: var(--danger); font-size: 18px; padding: 6px 10px; cursor: pointer; }
+    .item-sub { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+    .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .act-btn { background: var(--tile); border: none; width: 32px; height: 32px; border-radius: 10px; font-size: 14px; cursor: pointer; color: var(--text); }
+    .act-btn.del { color: var(--danger); }
 
-    .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-    input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #2f3542; background: #12141d; color: #fff; font-size: 16px; }
-    input:focus { outline: none; border-color: var(--accent); }
+    .sleep-hero { background: var(--card); border-radius: 22px; padding: 22px; text-align: center; margin-bottom: 16px; }
+    .timer-big { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 10px 0 18px; color: var(--text); }
+    .link-sm { background: none; border: none; color: var(--olive); font-size: 14px; font-weight: 600; margin-top: 12px; cursor: pointer; text-decoration: underline; }
+
+    .cat-header { display: flex; justify-content: space-between; align-items: center; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .cat-title { font-size: 14px; font-weight: 700; color: var(--olive); text-transform: uppercase; letter-spacing: 0.4px; }
+    .cat-actions { display: flex; gap: 6px; align-items: center; }
+
+    .badge { display: inline-block; padding: 4px 9px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-top: 6px; margin-right: 4px; }
+    .b-none { background: var(--tile); color: var(--muted); }
+    .b-try { background: var(--warn-bg); color: var(--warn-text); }
+    .b-ok { background: var(--olive-light); color: #4E6335; }
+    .b-bad { background: #FDE8E8; color: var(--danger); }
+    .b-date { background: #EEF2F7; color: #3B5998; }
+
+    .input-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 5px; display: block; }
+    .input-row { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
+    input, select { width: 100%; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; }
+    input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--olive); }
+    input:focus, select:focus { outline: none; border-color: var(--olive); }
+
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); z-index: 50; max-width: 500px; margin: 0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--muted); cursor: pointer; flex: 1; font-weight: 500; }
+    .nav-item.active { color: var(--text); font-weight: 700; }
+    .nav-icon { font-size: 20px; height: 24px; display: flex; align-items: center; }
+    .nav-plus-wrap { flex: 1; display: flex; justify-content: center; }
+    .nav-plus { width: 52px; height: 52px; border-radius: 16px; background: var(--olive); color: #fff; border: none; font-size: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-top: -18px; box-shadow: 0 4px 12px rgba(123, 146, 94, 0.35); }
+
+    .sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: flex-end; justify-content: center; }
+    .sheet-overlay.open { display: flex; }
+    .sheet-box { background: var(--card); width: 100%; max-width: 500px; border-radius: 26px 26px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; animation: slideUp 0.2s ease-out; }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .sheet-close-wrap { display: flex; justify-content: center; margin-top: 16px; }
+    .sheet-close { width: 48px; height: 48px; border-radius: 16px; background: var(--dark); color: #fff; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .modal-title { font-size: 19px; font-weight: 600; margin-bottom: 4px; text-align: center; }
+    .modal-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 16px; }
   </style>
 </head>
 <body>
 
-  <h1>Дневник малыша</h1>
-
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('sleep', this)">Сон</div>
-    <div class="tab" onclick="switchTab('growth', this)">Рост и вес</div>
-    <div class="tab" onclick="switchTab('sync', this)">Обмен</div>
-  </div>
-
-  <!-- ВКЛАДКА СОН -->
-  <div id="sleep-sec" class="section active">
-    <div class="card">
-      <div id="status-text" class="status-label">Готов к записи</div>
-      <div id="timer-display" class="timer">00:00:00</div>
-      <button id="sleep-btn" class="btn btn-sleep" onclick="toggleSleep()">Уснул</button>
-      <div id="today-summary" class="summary">Сон за сегодня: 0 ч 0 мин</div>
+  <!-- ШАПКА -->
+  <div class="top-bar">
+    <div>
+      <div class="greet-sub">Здравствуйте,</div>
+      <div class="greet-title" id="parent-name-display" onclick="openProfileModal()">Семья</div>
     </div>
-    <div class="list-title">История снов</div>
-    <div id="sleep-list"></div>
+    <div class="top-icons">
+      <div class="icon-circle" onclick="openTab('events')" title="Календарь событий">📅</div>
+      <div class="icon-circle" onclick="openProfileModal()" title="Настройки">⚙️</div>
+    </div>
   </div>
 
-  <!-- ВКЛАДКА РОСТ И ВЕС -->
-  <div id="growth-sec" class="section">
-    <div class="card">
-      <div class="input-group">
-        <input type="date" id="g-date">
+  <!-- КАРТОЧКА МАЛЫША -->
+  <div class="baby-card" onclick="openProfileModal()">
+    <div class="baby-left">
+      <div class="baby-avatar">👶</div>
+      <div>
+        <div class="baby-name" id="baby-name-display">Малыш</div>
+        <div class="baby-age" id="baby-age-display">Нажмите, чтобы указать дату рождения</div>
       </div>
-      <div class="input-group">
+    </div>
+    <div class="baby-plus">+</div>
+  </div>
+
+  <!-- ВКЛАДКА 1: ГЛАВНАЯ -->
+  <div id="page-home" class="page active">
+    <div class="info-card" id="home-reminder-card">
+      <div class="info-tag" id="home-rem-tag">Питание и прикорм</div>
+      <div class="info-title" id="home-rem-title">Календарь аллергенов</div>
+      <div class="info-desc" id="home-rem-desc">Укажите дату рождения малыша или дату разрешенного ввода для продуктов.</div>
+      <button class="btn-dark" id="home-rem-btn" onclick="handleHomeReminderBtn()">Открыть раздел</button>
+    </div>
+
+    <div class="sec-heading">Активные трекеры</div>
+    <div class="grid-2x2">
+      <div class="tracker-tile" id="tile-sleep" onclick="toggleSleepQuick()">
+        <div class="tile-icon">🌙</div>
+        <div>
+          <div class="tile-title">Сон</div>
+          <div class="tile-sub" id="tile-sleep-sub">Данных еще нет</div>
+        </div>
+      </div>
+
+      <div class="tracker-tile" onclick="openTab('events')">
+        <div class="tile-icon">📅</div>
+        <div>
+          <div class="tile-title">События</div>
+          <div class="tile-sub" id="tile-events-sub">Календарь и даты</div>
+        </div>
+      </div>
+
+      <div class="tracker-tile" onclick="openTab('allergens')">
+        <div class="tile-icon">🥄</div>
+        <div>
+          <div class="tile-title">Аллергены</div>
+          <div class="tile-sub" id="tile-allergen-sub">0 из 9 введено</div>
+        </div>
+      </div>
+
+      <div class="tracker-tile" onclick="openTab('growth')">
+        <div class="tile-icon">📏</div>
+        <div>
+          <div class="tile-title">Рост и вес</div>
+          <div class="tile-sub" id="tile-growth-sub">Данных еще нет</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 2: СОН -->
+  <div id="page-sleep" class="page">
+    <div class="sleep-hero">
+      <div class="info-tag" id="sleep-status-text">Готов к записи</div>
+      <div class="timer-big" id="sleep-timer-display">00:00:00</div>
+      <button class="btn-olive" id="sleep-main-btn" onclick="toggleSleepQuick()">Уснул</button>
+      <div><button class="link-sm" id="edit-active-sleep-btn" style="display:none;" onclick="openEditActive()">Изменить время начала</button></div>
+      <div class="item-sub" id="sleep-today-sum" style="margin-top:12px;">Сон за сегодня: 0 ч 0 мин</div>
+    </div>
+
+    <div class="sec-heading">
+      <span>История снов</span>
+      <button class="btn-pill" onclick="openAddSleep()">+ Добавить</button>
+    </div>
+    <div id="sleep-history-list"></div>
+  </div>
+
+  <!-- ВКЛАДКА 3: АЛЛЕРГЕНЫ -->
+  <div id="page-allergens" class="page">
+    <div class="sec-heading" style="margin-top:0;">
+      <span>Аллергены и продукты</span>
+      <div style="display:flex; gap:6px;">
+        <button class="btn-pill" onclick="openAddSectionModal()">+ Раздел</button>
+        <button class="btn-pill olive" onclick="openAddProductModal('')">+ Продукт</button>
+      </div>
+    </div>
+    <div class="item-sub" style="margin-bottom:8px;">Нажмите на продукт для мини-опроса или укажите дату, когда его можно вводить.</div>
+    <div id="allergen-list"></div>
+  </div>
+
+  <!-- ВКЛАДКА 4: РОСТ И ВЕС -->
+  <div id="page-growth" class="page">
+    <div class="sec-heading" style="margin-top:0;">Рост и вес</div>
+    <div class="info-card">
+      <div class="input-row"><input type="date" id="g-date"></div>
+      <div class="input-row">
         <input type="number" step="0.01" id="g-weight" placeholder="Вес (кг), напр. 3.65">
         <input type="number" step="0.5" id="g-height" placeholder="Рост (см), напр. 53">
       </div>
-      <button class="btn btn-save" onclick="addGrowth()">Добавить замер</button>
+      <button class="btn-olive" onclick="addGrowth()">Сохранить замер</button>
     </div>
-    <div class="list-title">История замеров</div>
+    <div class="sec-heading">История замеров</div>
     <div id="growth-list"></div>
   </div>
 
-  <!-- ВКЛАДКА ОБМЕН МЕЖДУ ТЕЛЕФОНАМИ -->
-  <div id="sync-sec" class="section">
-    <div class="card">
-      <div class="status-label" style="margin-bottom:14px;">Передача данных жене / мужу</div>
-      <button class="btn btn-save" style="margin-bottom:12px;" onclick="copySummary()">Скопировать сводку за сегодня</button>
-      <button class="btn btn-sec" onclick="exportData()">Скачать файл резервной копии</button>
-      <button class="btn btn-sec" onclick="document.getElementById('import-file').click()">Загрузить файл от партнера</button>
+  <!-- ВКЛАДКА 5: КАЛЕНДАРЬ СОБЫТИЙ И ПРАЗДНИКОВ -->
+  <div id="page-events" class="page">
+    <div class="sec-heading" style="margin-top:0;">
+      <span>События и праздники</span>
+      <button class="btn-pill olive" onclick="openAddEventModal()">+ Событие</button>
+    </div>
+    <div class="item-sub" style="margin-bottom:12px;">Значимые даты малыша рассчитываются автоматически от даты рождения. Добавляйте свои семейные праздники.</div>
+    <div id="events-list"></div>
+  </div>
+
+  <!-- ВКЛАДКА 6: ОБМЕН ДАННЫМИ -->
+  <div id="page-sync" class="page">
+    <div class="sec-heading" style="margin-top:0;">Синхронизация и профиль</div>
+    <div class="info-card">
+      <div class="info-title" style="font-size:17px;">Передача данных партнеру</div>
+      <div class="info-desc">Скопируйте текстовую сводку за день для мессенджера или передайте файл резервной копии.</div>
+      <button class="btn-olive" style="margin-bottom:10px;" onclick="copySummary()">Скопировать сводку за сегодня</button>
+      <button class="btn-light" style="margin-bottom:10px;" onclick="exportData()">Скачать файл копии (.json)</button>
+      <button class="btn-light" onclick="document.getElementById('import-file').click()">Загрузить файл от партнера</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
-      <div class="item-sub" style="margin-top:10px;">Данные хранятся в памяти этого телефона и не требуют интернета.</div>
+    </div>
+  </div>
+
+  <!-- НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="openTab('home')">
+      <div class="nav-icon">🏠</div>
+      <span>Главная</span>
+    </div>
+    <div class="nav-item" id="nav-sleep" onclick="openTab('sleep')">
+      <div class="nav-icon">🌙</div>
+      <span>Сон</span>
+    </div>
+    <div class="nav-plus-wrap">
+      <button class="nav-plus" onclick="openQuickSheet()">+</button>
+    </div>
+    <div class="nav-item" id="nav-allergens" onclick="openTab('allergens')">
+      <div class="nav-icon">🥄</div>
+      <span>Аллергены</span>
+    </div>
+    <div class="nav-item" id="nav-events" onclick="openTab('events')">
+      <div class="nav-icon">📅</div>
+      <span>События</span>
+    </div>
+  </div>
+
+  <!-- ШТОРКА БЫСТРЫХ ДЕЙСТВИЙ ПО КНОПКЕ "+" -->
+  <div id="quick-sheet" class="sheet-overlay" onclick="if(event.target===this) closeQuickSheet()">
+    <div class="sheet-box">
+      <div class="baby-card" style="background:var(--bg); margin-bottom:14px;" onclick="closeQuickSheet(); openProfileModal();">
+        <div class="baby-left">
+          <div class="baby-avatar">👶</div>
+          <div>
+            <div class="baby-name" id="sheet-baby-name">Малыш</div>
+            <div class="baby-age" id="sheet-baby-age">Возраст не указан</div>
+          </div>
+        </div>
+        <div class="baby-plus">✎</div>
+      </div>
+
+      <div class="grid-2x2">
+        <div class="tracker-tile" onclick="closeQuickSheet(); toggleSleepQuick();">
+          <div class="tile-icon">🌙</div>
+          <div>
+            <div class="tile-title" id="sheet-sleep-title">Сон</div>
+            <div class="tile-sub" id="sheet-sleep-sub">Начать / стоп</div>
+          </div>
+        </div>
+        <div class="tracker-tile" onclick="closeQuickSheet(); openAddEventModal();">
+          <div class="tile-icon">🎉</div>
+          <div>
+            <div class="tile-title">+ Праздник</div>
+            <div class="tile-sub">В календарь</div>
+          </div>
+        </div>
+        <div class="tracker-tile" onclick="closeQuickSheet(); openAddProductModal('');">
+          <div class="tile-icon">🥄</div>
+          <div>
+            <div class="tile-title">+ Продукт</div>
+            <div class="tile-sub">В аллергены</div>
+          </div>
+        </div>
+        <div class="tracker-tile" onclick="closeQuickSheet(); openTab('growth');">
+          <div class="tile-icon">📏</div>
+          <div>
+            <div class="tile-title">Рост и вес</div>
+            <div class="tile-sub">Новый замер</div>
+          </div>
+        </div>
+        <div class="tracker-tile" onclick="closeQuickSheet(); copySummary();">
+          <div class="tile-icon">📋</div>
+          <div>
+            <div class="tile-title">Сводка дня</div>
+            <div class="tile-sub">Скопировать</div>
+          </div>
+        </div>
+        <div class="tracker-tile" onclick="closeQuickSheet(); openTab('sync');">
+          <div class="tile-icon">⚙️</div>
+          <div>
+            <div class="tile-title">Ещё</div>
+            <div class="tile-sub">Обмен и копии</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-close-wrap">
+        <button class="sheet-close" onclick="closeQuickSheet()">✕</button>
+      </div>
+    </div>
+  </div>
+  <!-- ШТОРКА ДОБАВЛЕНИЯ ПРАЗДНИКА / СОБЫТИЯ -->
+  <div id="add-event-modal" class="sheet-overlay" onclick="if(event.target===this) closeAddEventModal()">
+    <div class="sheet-box">
+      <div class="modal-title">Новое событие / праздник</div>
+      <div class="modal-sub">Сохраните важную дату в семейном календаре</div>
+      <label class="input-label">Название события</label>
+      <div class="input-row"><input type="text" id="ev-title" placeholder="Напр. Крестины, Годовщина, Первый зуб"></div>
+      <label class="input-label">Дата</label>
+      <div class="input-row"><input type="date" id="ev-date"></div>
+      <label class="input-label">Заметка (необязательно)</label>
+      <div class="input-row"><input type="text" id="ev-note" placeholder="Где отмечаем или важные детали"></div>
+      <div class="input-row" style="justify-content: flex-start; gap: 10px; margin-top: 4px;">
+        <input type="checkbox" id="ev-yearly">
+        <label for="ev-yearly" style="font-size:14px; color:var(--text); cursor:pointer;">Повторять каждый год (праздник / день рождения)</label>
+      </div>
+      <div class="input-row" style="margin-top:14px;">
+        <button class="btn-light" onclick="closeAddEventModal()">Отмена</button>
+        <button class="btn-olive" onclick="saveAddEventModal()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ШТОРКА ПРОФИЛЯ -->
+  <div id="profile-sheet" class="sheet-overlay" onclick="if(event.target===this) closeProfileModal()">
+    <div class="sheet-box">
+      <div class="modal-title">Профиль семьи и малыша</div>
+      <div class="modal-sub">Данные сохраняются в памяти телефона</div>
+      <label class="input-label">Как к вам обращаться</label>
+      <div class="input-row"><input type="text" id="p-parent" placeholder="Например: Марк и Карина"></div>
+      <label class="input-label">Имя малыша</label>
+      <div class="input-row"><input type="text" id="p-baby" placeholder="Имя малыша"></div>
+      <label class="input-label">Дата рождения (или ПДР)</label>
+      <div class="input-row"><input type="date" id="p-birth"></div>
+      <div class="input-row" style="margin-top:14px;">
+        <button class="btn-light" onclick="closeProfileModal()">Отмена</button>
+        <button class="btn-olive" onclick="saveProfileModal()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ШТОРКА ДОБАВЛЕНИЯ РАЗДЕЛА АЛЛЕРГЕНОВ -->
+  <div id="add-sec-modal" class="sheet-overlay" onclick="if(event.target===this) closeAddSectionModal()">
+    <div class="sheet-box">
+      <div class="modal-title">Новый раздел</div>
+      <div class="modal-sub">Например: «Овощи с 5 мес.» или «Ягоды»</div>
+      <label class="input-label">Название раздела</label>
+      <div class="input-row"><input type="text" id="sec-name" placeholder="Название группы продуктов"></div>
+      <label class="input-label">Рекомендуемый возраст (в месяцах)</label>
+      <div class="input-row"><input type="number" id="sec-months" min="0" max="36" value="6"></div>
+      <div class="input-row" style="margin-top:14px;">
+        <button class="btn-light" onclick="closeAddSectionModal()">Отмена</button>
+        <button class="btn-olive" onclick="saveAddSectionModal()">Создать раздел</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ШТОРКА ДОБАВЛЕНИЯ ПРОДУКТА -->
+  <div id="add-prod-modal" class="sheet-overlay" onclick="if(event.target===this) closeAddProductModal()">
+    <div class="sheet-box">
+      <div class="modal-title">Новый продукт / аллерген</div>
+      <div class="modal-sub">Укажите, когда его можно вводить</div>
+      <label class="input-label">Раздел</label>
+      <div class="input-row"><select id="np-section"></select></div>
+      <label class="input-label">Название продукта</label>
+      <div class="input-row"><input type="text" id="np-name" placeholder="Например: Клубника или Гречка"></div>
+      <label class="input-label">Как давать (подсказка)</label>
+      <div class="input-row"><input type="text" id="np-hint" placeholder="Напр. Пюре без сахара, с 1/2 ч.л."></div>
+      <label class="input-label">Дата, когда можно вводить</label>
+      <div class="input-row"><input type="date" id="np-allow-date"></div>
+      <div class="input-row" style="margin-top:14px;">
+        <button class="btn-light" onclick="closeAddProductModal()">Отмена</button>
+        <button class="btn-olive" onclick="saveAddProductModal()">Добавить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ШТОРКА РЕДАКТИРОВАНИЯ СНА -->
+  <div id="sleep-modal" class="sheet-overlay" onclick="if(event.target===this) closeSleepModal()">
+    <div class="sheet-box">
+      <div class="modal-title" id="s-modal-title">Редактировать сон</div>
+      <div class="modal-sub">Укажите точное время</div>
+      <label class="input-label">Начало сна</label>
+      <div class="input-row"><input type="datetime-local" id="m-start"></div>
+      <div id="m-end-wrap">
+        <label class="input-label">Окончание сна</label>
+        <div class="input-row"><input type="datetime-local" id="m-end"></div>
+      </div>
+      <div class="input-row" style="margin-top:14px;">
+        <button class="btn-light" onclick="closeSleepModal()">Отмена</button>
+        <button class="btn-olive" onclick="saveSleepModal()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ШТОРКА МИНИ-ОПРОСА ПО АЛЛЕРГЕНУ -->
+  <div id="allergen-modal" class="sheet-overlay" onclick="if(event.target===this) closeAllergenModal()">
+    <div class="sheet-box">
+      <div class="modal-title" id="a-modal-title">Аллерген</div>
+      <div class="modal-sub" id="a-modal-hint"></div>
+      <label class="input-label">Когда можно вводить (плановая дата)</label>
+      <div class="input-row"><input type="date" id="a-allow-date"></div>
+      <label class="input-label">1. В каком виде давали продукт?</label>
+      <div class="input-row"><input type="text" id="a-form" placeholder="Напр. 1/4 ч.л. желтка в пюре"></div>
+      <label class="input-label">2. Когда давали (время суток)?</label>
+      <div class="input-row">
+        <select id="a-time">
+          <option value="Утром (первая половина дня)">Утром (первая половина дня)</option>
+          <option value="В обед">В обед</option>
+          <option value="Вечером">Вечером</option>
+        </select>
+      </div>
+      <label class="input-label">3. Сколько дней подряд пробовали?</label>
+      <div class="input-row">
+        <select id="a-days">
+          <option value="1-й день пробы">1-й день пробы (микродоза)</option>
+          <option value="2 дня">2 дня</option>
+          <option value="3 и более дней">3 и более дней</option>
+          <option value="Ест регулярно">Уже ест регулярно</option>
+        </select>
+      </div>
+      <label class="input-label">4. Итог и реакция организма</label>
+      <div class="input-row">
+        <select id="a-status">
+          <option value="none">Еще не вводили</option>
+          <option value="try">В процессе (наблюдаем)</option>
+          <option value="ok">Введен успешно (реакции нет)</option>
+          <option value="bad">Была реакция (сыпь / живот / др.)</option>
+        </select>
+      </div>
+      <label class="input-label">Дата фактической пробы и заметки</label>
+      <div class="input-row"><input type="date" id="a-date"></div>
+      <div class="input-row"><input type="text" id="a-note" placeholder="Доп. комментарий"></div>
+      <div class="input-row" style="margin-top:14px;">
+        <button class="btn-light" onclick="closeAllergenModal()">Отмена</button>
+        <button class="btn-olive" onclick="saveAllergenModal()">Сохранить</button>
+      </div>
     </div>
   </div>
 
 <script>
-  const STORAGE_KEY = 'baby_tracker_data_v1';
-  let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { sleeps: [], growths: [] };
+  const STORAGE_KEY = 'baby_tracker_data_v6';
+  const DEFAULT_SECTIONS = [
+    { id: 'sec_4_6', title: 'С 4–6 месяцев (начало прикорма)', minMonths: 4, custom: false },
+    { id: 'sec_6', title: 'С 6 месяцев', minMonths: 6, custom: false },
+    { id: 'sec_7_8', title: 'С 7–8 месяцев', minMonths: 7, custom: false },
+    { id: 'sec_8_12', title: 'С 8–12 месяцев', minMonths: 8, custom: false }
+  ];
+
+  const DEFAULT_ALLERGENS = [
+    { id: 'wheat', sectionId: 'sec_4_6', name: 'Пшеница (глютен)', hint: 'Пшеничная или овсяная каша на воде/молоке', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'egg', sectionId: 'sec_6', name: 'Куриное яйцо', hint: 'Сначала круто сваренный желток (с крупинки), затем белок', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'peanut', sectionId: 'sec_6', name: 'Арахис', hint: 'Только гладкая паста без сахара, разведенная в каше или пюре', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'nuts', sectionId: 'sec_6', name: 'Древесные орехи', hint: 'Грецкий, кешью, миндаль, фундук — в виде пасты или муки', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'sesame', sectionId: 'sec_6', name: 'Кунжут', hint: 'Паста тахини или молотый кунжут в кашу или овощи', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'soy', sectionId: 'sec_6', name: 'Соя', hint: 'Мягкий сыр тофу, соевый йогурт без добавок или соевая мука', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'milk', sectionId: 'sec_7_8', name: 'Коровье молоко (БКМ)', hint: 'Детский творожок, биолакт, кефир, сливочное масло', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'fish', sectionId: 'sec_8_12', name: 'Рыба', hint: 'Нежирные сорта (треска, хек, минтай), строго без костей', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false },
+    { id: 'shellfish', sectionId: 'sec_8_12', name: 'Морепродукты', hint: 'Креветки, кальмары, мидии — хорошо проваренные и измельченные', allowDate: '', status: 'none', date: '', form: '', time: '', days: '', note: '', custom: false }
+  ];
+
+  let oldData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || JSON.parse(localStorage.getItem('baby_tracker_data_v5')) || {};
+  let state = {
+    parentName: oldData.parentName || 'Семья',
+    babyName: oldData.babyName || 'Малыш',
+    birthDate: oldData.birthDate || '',
+    sleeps: oldData.sleeps || [],
+    growths: oldData.growths || [],
+    events: oldData.events || [],
+    sections: oldData.sections && oldData.sections.length ? oldData.sections : DEFAULT_SECTIONS,
+    allergens: oldData.allergens && oldData.allergens.length ? oldData.allergens.map(a => ({
+      sectionId: a.sectionId || 'sec_6', allowDate: a.allowDate || '', ...a
+    })) : DEFAULT_ALLERGENS
+  };
+
   let timerInterval = null;
+  let editingSleepId = null;
+  let isActiveEdit = false;
+  let editingAllergenId = null;
+  let suggestedAllergenId = null;
 
   document.getElementById('g-date').valueAsDate = new Date();
+  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  function openTab(tabName) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const page = document.getElementById('page-' + tabName);
+    if (page) page.classList.add('active');
+    const nav = document.getElementById('nav-' + tabName);
+    if (nav) nav.classList.add('active');
+    window.scrollTo(0, 0);
   }
 
-  function switchTab(tab, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById(tab + '-sec').classList.add('active');
-  }
+  function openQuickSheet() { document.getElementById('quick-sheet').classList.add('open'); }
+  function closeQuickSheet() { document.getElementById('quick-sheet').classList.remove('open'); }
 
   function formatDuration(ms) {
     if (ms < 0) ms = 0;
@@ -124,114 +529,405 @@
     return `${h}:${m}:${s}`;
   }
 
-  function formatTime(isoStr) {
-    return new Date(isoStr).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  function formatTime(iso) { return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }); }
+  function formatDate(iso) { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }); }
+  function formatFullDate(iso) { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); }
+  function toLocalInputStr(iso) {
+    const d = iso ? new Date(iso) : new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   }
 
-  function formatDate(isoStr) {
-    return new Date(isoStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  function getAgeStats() {
+    if (!state.birthDate) return null;
+    const birth = new Date(state.birthDate + 'T00:00:00');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.floor((today - birth) / 86400000);
+    if (diffDays < 0) return { isFuture: true, daysLeft: Math.abs(diffDays), months: 0 };
+
+    let months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
+    let anchor = new Date(birth.getFullYear(), birth.getMonth() + months, birth.getDate());
+    if (anchor > today) {
+      months--;
+      anchor = new Date(birth.getFullYear(), birth.getMonth() + months, birth.getDate());
+    }
+    const remDays = Math.floor((today - anchor) / 86400000);
+    return { isFuture: false, diffDays, months, remDays };
+  }
+
+  function renderProfileAndReminders() {
+    document.getElementById('parent-name-display').textContent = state.parentName || 'Семья';
+    document.getElementById('baby-name-display').textContent = state.babyName || 'Малыш';
+    document.getElementById('sheet-baby-name').textContent = state.babyName || 'Малыш';
+
+    const age = getAgeStats();
+    let ageText = 'Нажмите, чтобы указать дату рождения';
+    if (age) {
+      if (age.isFuture) ageText = `До рождения: ${age.daysLeft} дн.`;
+      else if (age.months === 0) ageText = `${age.diffDays} дн. от рождения`;
+      else ageText = `${age.months} мес. ${age.remDays} дн.`;
+    }
+    document.getElementById('baby-age-display').textContent = ageText;
+    document.getElementById('sheet-baby-age').textContent = ageText;
+
+    const tag = document.getElementById('home-rem-tag');
+    const title = document.getElementById('home-rem-title');
+    const desc = document.getElementById('home-rem-desc');
+    const btn = document.getElementById('home-rem-btn');
+
+    const trying = state.allergens.find(a => a.status === 'try');
+    if (trying) {
+      suggestedAllergenId = trying.id;
+      tag.textContent = 'Идет ввод продукта';
+      title.textContent = `Пробуем: ${trying.name}`;
+      desc.textContent = trying.hint || 'Нажмите, чтобы обновить статус пробы.';
+      btn.textContent = 'Обновить статус';
+      return;
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const byDateReady = state.allergens.find(a => a.status === 'none' && a.allowDate && a.allowDate <= todayStr);
+    if (byDateReady) {
+      suggestedAllergenId = byDateReady.id;
+      tag.textContent = `Пора вводить (с ${formatDate(byDateReady.allowDate)})`;
+      title.textContent = byDateReady.name;
+      desc.textContent = byDateReady.hint || 'Наступила запланированная дата ввода.';
+      btn.textContent = 'Отметить ввод (мини-опрос)';
+      return;
+    }
+
+    if (age && !age.isFuture) {
+      const byAgeReady = state.allergens.find(a => {
+        if (a.status !== 'none' || a.allowDate) return false;
+        const sec = state.sections.find(s => s.id === a.sectionId);
+        return sec && age.months >= (sec.minMonths || 6);
+      });
+      if (byAgeReady) {
+        suggestedAllergenId = byAgeReady.id;
+        tag.textContent = `Пора вводить (${age.months} мес.)`;
+        title.textContent = byAgeReady.name;
+        desc.textContent = byAgeReady.hint;
+        btn.textContent = 'Отметить ввод (мини-опрос)';
+        return;
+      }
+    }
+
+    suggestedAllergenId = null;
+    tag.textContent = 'Питание и прикорм';
+    title.textContent = 'Аллергены и продукты';
+    desc.textContent = 'Добавляйте свои разделы, продукты и даты, когда их можно вводить в рацион.';
+    btn.textContent = 'Открыть раздел';
+  }
+
+  function handleHomeReminderBtn() {
+    openTab('allergens');
+    if (suggestedAllergenId) openAllergenModal(suggestedAllergenId);
+  }
+
+  function openProfileModal() {
+    document.getElementById('p-parent').value = state.parentName === 'Семья' ? '' : state.parentName;
+    document.getElementById('p-baby').value = state.babyName === 'Малыш' ? '' : state.babyName;
+    document.getElementById('p-birth').value = state.birthDate || '';
+    document.getElementById('profile-sheet').classList.add('open');
+  }
+  function closeProfileModal() { document.getElementById('profile-sheet').classList.remove('open'); }
+  function saveProfileModal() {
+    state.parentName = document.getElementById('p-parent').value.trim() || 'Семья';
+    state.babyName = document.getElementById('p-baby').value.trim() || 'Малыш';
+    state.birthDate = document.getElementById('p-birth').value;
+    saveState(); closeProfileModal(); renderProfileAndReminders(); renderEvents();
+  }
+  function renderEvents() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let allEvents = [];
+
+    if (state.birthDate) {
+      const b = new Date(state.birthDate + 'T00:00:00');
+      const milestones = [
+        { addDays: 7, title: 'Первая неделя жизни', note: 'Малышу исполнилась 1 неделя' },
+        { addMonths: 1, title: '1 месяц', note: 'Первый мини-день рождения' },
+        { addMonths: 2, title: '2 месяца', note: 'Значимая дата развития' },
+        { addMonths: 3, title: '3 месяца', note: 'Конец четвертого триместра' },
+        { addMonths: 4, title: '4 месяца', note: 'Время новых навыков' },
+        { addMonths: 5, title: '5 месяцев', note: 'Скоро начало прикорма' },
+        { addMonths: 6, title: 'Полгода (6 месяцев)!', note: 'Большой рубеж — полгода вместе' },
+        { addMonths: 7, title: '7 месяцев', note: 'Малышу 7 месяцев' },
+        { addMonths: 8, title: '8 месяцев', note: 'Малышу 8 месяцев' },
+        { addMonths: 9, title: '9 месяцев', note: 'Малышу 9 месяцев' },
+        { addMonths: 10, title: '10 месяцев', note: 'Малышу 10 месяцев' },
+        { addMonths: 11, title: '11 месяцев', note: 'Финишная прямая до годика' },
+        { addMonths: 12, title: 'Первый День рождения (1 год)!', note: 'Главный праздник первого года' }
+      ];
+      milestones.forEach((m, idx) => {
+        let d = new Date(b);
+        if (m.addDays) d.setDate(d.getDate() + m.addDays);
+        if (m.addMonths) d.setMonth(d.getMonth() + m.addMonths);
+        allEvents.push({ id: 'auto_' + idx, title: m.title, note: m.note, dateObj: d, isAuto: true });
+      });
+    }
+
+    state.events.forEach(ev => {
+      const orig = new Date(ev.date + 'T00:00:00');
+      let target = new Date(orig);
+      if (ev.yearly) {
+        target.setFullYear(today.getFullYear());
+        if (target < today) target.setFullYear(today.getFullYear() + 1);
+      }
+      allEvents.push({ id: ev.id, title: ev.title, note: ev.note, dateObj: target, yearly: ev.yearly, isAuto: false });
+    });
+
+    const upcoming = allEvents.filter(e => e.dateObj >= today).sort((a, b) => a.dateObj - b.dateObj);
+    const past = allEvents.filter(e => e.dateObj < today).sort((a, b) => b.dateObj - a.dateObj);
+
+    const tileSub = document.getElementById('tile-events-sub');
+    if (upcoming.length > 0) {
+      const nextEv = upcoming.at(0);
+      const diff = Math.round((nextEv.dateObj - today) / 86400000);
+      tileSub.textContent = diff === 0 ? `Сегодня: ${nextEv.title}` : `Через ${diff} дн.: ${nextEv.title}`;
+    } else {
+      tileSub.textContent = 'Добавить праздник';
+    }
+
+    const list = document.getElementById('events-list');
+    if (allEvents.length === 0) {
+      list.innerHTML = '<div class="item-sub" style="text-align:center;">Укажите дату рождения в профиле или добавьте свой праздник кнопкой сверху.</div>';
+      return;
+    }
+
+    const renderCard = (e, isPast) => {
+      const diff = Math.round((e.dateObj - today) / 86400000);
+      let badgeText = '';
+      let badgeCls = 'b-date';
+      if (diff === 0) { badgeText = 'Сегодня!'; badgeCls = 'b-ok'; }
+      else if (diff === 1) { badgeText = 'Завтра'; badgeCls = 'b-try'; }
+      else if (diff > 1) { badgeText = `Через ${diff} дн.`; badgeCls = 'b-date'; }
+      else { badgeText = `${Math.abs(diff)} дн. назад`; badgeCls = 'b-none'; }
+
+      return `
+        <div class="list-item ${diff === 0 ? 'today-event' : ''}" style="${isPast ? 'opacity:0.7;' : ''}">
+          <div>
+            <div class="item-main">${e.isAuto ? '🎂 ' : '🎉 '}${e.title}</div>
+            <div class="item-sub">${formatFullDate(e.dateObj)}${e.note ? ' • ' + e.note : ''}</div>
+            <div>
+              <span class="badge ${badgeCls}">${badgeText}</span>
+              ${e.yearly ? '<span class="badge b-none">Ежегодный</span>' : ''}
+            </div>
+          </div>
+          ${!e.isAuto ? `<button class="act-btn del" onclick="deleteEvent('${e.id}')">✕</button>` : ''}
+        </div>
+      `;
+    };
+
+    let html = '';
+    if (upcoming.length > 0) {
+      html += `<div class="cat-header"><div class="cat-title">Предстоящие события</div></div>`;
+      html += upcoming.map(e => renderCard(e, false)).join('');
+    }
+    if (past.length > 0) {
+      html += `<div class="cat-header"><div class="cat-title">Прошедшие даты</div></div>`;
+      html += past.map(e => renderCard(e, true)).join('');
+    }
+    list.innerHTML = html;
+  }
+
+  function openAddEventModal() {
+    document.getElementById('ev-title').value = '';
+    document.getElementById('ev-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('ev-note').value = '';
+    document.getElementById('ev-yearly').checked = false;
+    document.getElementById('add-event-modal').classList.add('open');
+  }
+  function closeAddEventModal() { document.getElementById('add-event-modal').classList.remove('open'); }
+  function saveAddEventModal() {
+    const title = document.getElementById('ev-title').value.trim();
+    const date = document.getElementById('ev-date').value;
+    if (!title || !date) return alert('Укажите название и дату события');
+    const note = document.getElementById('ev-note').value.trim();
+    const yearly = document.getElementById('ev-yearly').checked;
+    state.events.push({ id: 'ev_' + Date.now(), title, date, note, yearly });
+    saveState(); closeAddEventModal(); renderEvents();
+  }
+  function deleteEvent(id) {
+    if (!confirm('Удалить этот праздник из календаря?')) return;
+    state.events = state.events.filter(e => e.id !== id);
+    saveState(); renderEvents();
   }
 
   function renderSleep() {
-    const activeSleep = state.sleeps.find(item => !item.end_time) || null;
-    const finished = state.sleeps.filter(item => item.end_time).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-    const lastWakeTime = finished.length > 0 ? finished.at(0).end_time : null;
+    const active = state.sleeps.find(s => !s.end_time) || null;
+    const finished = state.sleeps.filter(s => s.end_time).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+    const lastWake = finished.length > 0 ? finished.at(0).end_time : null;
 
-    const btn = document.getElementById('sleep-btn');
-    const status = document.getElementById('status-text');
-    const display = document.getElementById('timer-display');
+    const tile = document.getElementById('tile-sleep');
+    const tileSub = document.getElementById('tile-sleep-sub');
+    const sheetTitle = document.getElementById('sheet-sleep-title');
+    const sheetSub = document.getElementById('sheet-sleep-sub');
+    const status = document.getElementById('sleep-status-text');
+    const timer = document.getElementById('sleep-timer-display');
+    const mainBtn = document.getElementById('sleep-main-btn');
+    const editBtn = document.getElementById('edit-active-sleep-btn');
+
     clearInterval(timerInterval);
 
-    if (activeSleep) {
-      status.textContent = 'Малыш спит';
-      btn.textContent = 'Проснулся';
-      btn.className = 'btn btn-wake';
-      const tick = () => display.textContent = formatDuration(Date.now() - new Date(activeSleep.start_time));
-      tick();
-      timerInterval = setInterval(tick, 1000);
+    if (active) {
+      tile.classList.add('active-sleep');
+      status.textContent = 'Малыш спит с ' + formatTime(active.start_time);
+      mainBtn.textContent = 'Проснулся';
+      sheetTitle.textContent = 'Проснулся';
+      sheetSub.textContent = 'Остановить таймер';
+      editBtn.style.display = 'inline-block';
+      const tick = () => {
+        const str = formatDuration(Date.now() - new Date(active.start_time));
+        timer.textContent = str;
+        tileSub.textContent = 'Спит: ' + str.slice(0, 5);
+      };
+      tick(); timerInterval = setInterval(tick, 1000);
     } else {
-      btn.textContent = 'Уснул';
-      btn.className = 'btn btn-sleep';
-      if (lastWakeTime) {
+      tile.classList.remove('active-sleep');
+      mainBtn.textContent = 'Уснул';
+      sheetTitle.textContent = 'Уснул';
+      sheetSub.textContent = 'Запустить таймер';
+      editBtn.style.display = 'none';
+      if (lastWake) {
         status.textContent = 'Бодрствует';
-        const tick = () => display.textContent = formatDuration(Date.now() - new Date(lastWakeTime));
-        tick();
-        timerInterval = setInterval(tick, 1000);
+        const tick = () => {
+          const str = formatDuration(Date.now() - new Date(lastWake));
+          timer.textContent = str;
+          tileSub.textContent = 'Не спит: ' + str.slice(0, 5);
+        };
+        tick(); timerInterval = setInterval(tick, 1000);
       } else {
         status.textContent = 'Готов к записи';
-        display.textContent = '00:00:00';
+        timer.textContent = '00:00:00';
+        tileSub.textContent = 'Данных еще нет';
       }
     }
 
     const todayStr = new Date().toDateString();
     let todayMs = 0;
-    finished.forEach(item => {
-      if (new Date(item.start_time).toDateString() === todayStr) {
-        todayMs += new Date(item.end_time) - new Date(item.start_time);
-      }
-    });
+    finished.forEach(s => { if (new Date(s.start_time).toDateString() === todayStr) todayMs += new Date(s.end_time) - new Date(s.start_time); });
     const tMins = Math.round(todayMs / 60000);
-    document.getElementById('today-summary').textContent = `Сон за сегодня: ${Math.floor(tMins / 60)} ч ${tMins % 60} мин`;
+    document.getElementById('sleep-today-sum').textContent = `Сон за сегодня: ${Math.floor(tMins / 60)} ч ${tMins % 60} мин`;
 
-    const list = document.getElementById('sleep-list');
+    const list = document.getElementById('sleep-history-list');
     if (finished.length === 0) {
       list.innerHTML = '<div class="item-sub" style="text-align:center;">Записей пока нет</div>';
       return;
     }
-
-    list.innerHTML = finished.map(item => {
-      const mins = Math.round((new Date(item.end_time) - new Date(item.start_time)) / 60000);
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      const durText = h > 0 ? `${h} ч ${m} мин` : `${m} мин`;
+    list.innerHTML = finished.map(s => {
+      const mins = Math.round((new Date(s.end_time) - new Date(s.start_time)) / 60000);
+      const h = Math.floor(mins / 60), m = mins % 60;
+      const dur = h > 0 ? `${h} ч ${m} мин` : `${m} мин`;
       return `
-        <div class="item">
+        <div class="list-item">
           <div>
-            <div class="item-main">${durText}</div>
-            <div class="item-sub">${formatDate(item.start_time)} • ${formatTime(item.start_time)} – ${formatTime(item.end_time)}</div>
+            <div class="item-main">${dur}</div>
+            <div class="item-sub">${formatDate(s.start_time)} • ${formatTime(s.start_time)} – ${formatTime(s.end_time)}</div>
           </div>
-          <button class="del-btn" onclick="deleteSleep('${item.id}')">✕</button>
+          <div class="item-actions">
+            <button class="act-btn" onclick="openEditSleep('${s.id}')">✎</button>
+            <button class="act-btn del" onclick="deleteSleep('${s.id}')">✕</button>
+          </div>
         </div>
       `;
     }).join('');
   }
+  function toggleSleepQuick() {
+    const active = state.sleeps.find(s => !s.end_time);
+    if (active) active.end_time = new Date().toISOString();
+    else state.sleeps.unshift({ id: String(Date.now()), start_time: new Date().toISOString(), end_time: null });
+    saveState(); renderSleep();
+  }
 
-  function toggleSleep() {
-    const activeSleep = state.sleeps.find(item => !item.end_time);
-    if (activeSleep) {
-      activeSleep.end_time = new Date().toISOString();
+  function openEditActive() {
+    const active = state.sleeps.find(s => !s.end_time);
+    if (!active) return;
+    editingSleepId = active.id; isActiveEdit = true;
+    document.getElementById('s-modal-title').textContent = 'Начало текущего сна';
+    document.getElementById('m-start').value = toLocalInputStr(active.start_time);
+    document.getElementById('m-end-wrap').style.display = 'none';
+    document.getElementById('sleep-modal').classList.add('open');
+  }
+
+  function openEditSleep(id) {
+    const item = state.sleeps.find(s => s.id === id);
+    if (!item) return;
+    editingSleepId = id; isActiveEdit = false;
+    document.getElementById('s-modal-title').textContent = 'Редактировать сон';
+    document.getElementById('m-start').value = toLocalInputStr(item.start_time);
+    document.getElementById('m-end').value = toLocalInputStr(item.end_time);
+    document.getElementById('m-end-wrap').style.display = 'block';
+    document.getElementById('sleep-modal').classList.add('open');
+  }
+
+  function openAddSleep() {
+    editingSleepId = null; isActiveEdit = false;
+    document.getElementById('s-modal-title').textContent = 'Добавить сон вручную';
+    const now = new Date();
+    document.getElementById('m-start').value = toLocalInputStr(new Date(now.getTime() - 3600000).toISOString());
+    document.getElementById('m-end').value = toLocalInputStr(now.toISOString());
+    document.getElementById('m-end-wrap').style.display = 'block';
+    document.getElementById('sleep-modal').classList.add('open');
+  }
+
+  function closeSleepModal() { document.getElementById('sleep-modal').classList.remove('open'); }
+  function saveSleepModal() {
+    const sVal = document.getElementById('m-start').value;
+    if (!sVal) return alert('Укажите начало');
+    const sDate = new Date(sVal);
+    if (isActiveEdit) {
+      if (sDate > new Date()) return alert('Время не может быть в будущем');
+      const item = state.sleeps.find(s => s.id === editingSleepId);
+      if (item) item.start_time = sDate.toISOString();
     } else {
-      state.sleeps.unshift({ id: String(Date.now()), start_time: new Date().toISOString(), end_time: null });
+      const eVal = document.getElementById('m-end').value;
+      if (!eVal) return alert('Укажите окончание');
+      const eDate = new Date(eVal);
+      if (eDate <= sDate) return alert('Пробуждение должно быть позже засыпания');
+      if (editingSleepId) {
+        const item = state.sleeps.find(s => s.id === editingSleepId);
+        if (item) { item.start_time = sDate.toISOString(); item.end_time = eDate.toISOString(); }
+      } else {
+        state.sleeps.unshift({ id: String(Date.now()), start_time: sDate.toISOString(), end_time: eDate.toISOString() });
+      }
     }
-    saveState();
-    renderSleep();
+    saveState(); closeSleepModal(); renderSleep();
   }
 
   function deleteSleep(id) {
-    if (!confirm('Удалить запись о сне?')) return;
-    state.sleeps = state.sleeps.filter(item => item.id !== id);
-    saveState();
-    renderSleep();
+    if (!confirm('Удалить запись?')) return;
+    state.sleeps = state.sleeps.filter(s => s.id !== id);
+    saveState(); renderSleep();
   }
 
   function renderGrowth() {
     const sorted = [...state.growths].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const tileSub = document.getElementById('tile-growth-sub');
+    if (sorted.length > 0) {
+      const last = sorted.at(0);
+      const p = [];
+      if (last.weight_kg) p.push(`${last.weight_kg} кг`);
+      if (last.height_cm) p.push(`${last.height_cm} см`);
+      tileSub.textContent = p.join(' • ');
+    } else tileSub.textContent = 'Данных еще нет';
+
     const list = document.getElementById('growth-list');
     if (sorted.length === 0) {
       list.innerHTML = '<div class="item-sub" style="text-align:center;">Замеров пока нет</div>';
       return;
     }
-    list.innerHTML = sorted.map(item => {
+    list.innerHTML = sorted.map(g => {
       const parts = [];
-      if (item.weight_kg) parts.push(`${item.weight_kg} кг`);
-      if (item.height_cm) parts.push(`${item.height_cm} см`);
+      if (g.weight_kg) parts.push(`${g.weight_kg} кг`);
+      if (g.height_cm) parts.push(`${g.height_cm} см`);
       return `
-        <div class="item">
+        <div class="list-item">
           <div>
             <div class="item-main">${parts.join(' • ')}</div>
-            <div class="item-sub">${formatDate(item.date)}</div>
+            <div class="item-sub">${formatDate(g.date)}</div>
           </div>
-          <button class="del-btn" onclick="deleteGrowth('${item.id}')">✕</button>
+          <button class="act-btn del" onclick="deleteGrowth('${g.id}')">✕</button>
         </div>
       `;
     }).join('');
@@ -239,16 +935,10 @@
 
   function addGrowth() {
     const date = document.getElementById('g-date').value;
-    const weight = document.getElementById('g-weight').value;
-    const height = document.getElementById('g-height').value;
-    if (!weight && !height) return alert('Введите вес или рост');
-
-    state.growths.unshift({
-      id: String(Date.now()),
-      date,
-      weight_kg: weight ? parseFloat(weight) : null,
-      height_cm: height ? parseFloat(height) : null
-    });
+    const w = document.getElementById('g-weight').value;
+    const h = document.getElementById('g-height').value;
+    if (!w && !h) return alert('Введите вес или рост');
+    state.growths.unshift({ id: String(Date.now()), date, weight_kg: w ? parseFloat(w) : null, height_cm: h ? parseFloat(h) : null });
     saveState();
     document.getElementById('g-weight').value = '';
     document.getElementById('g-height').value = '';
@@ -257,21 +947,165 @@
 
   function deleteGrowth(id) {
     if (!confirm('Удалить замер?')) return;
-    state.growths = state.growths.filter(item => item.id !== id);
-    saveState();
-    renderGrowth();
+    state.growths = state.growths.filter(g => g.id !== id);
+    saveState(); renderGrowth();
+  }
+
+  function renderAllergens() {
+    const okCount = state.allergens.filter(a => a.status === 'ok').length;
+    document.getElementById('tile-allergen-sub').textContent = `${okCount} из ${state.allergens.length} введено`;
+
+    const stMap = {
+      none: { text: 'Не вводили', cls: 'b-none' },
+      try: { text: 'Пробуем', cls: 'b-try' },
+      ok: { text: 'Введен (ОК)', cls: 'b-ok' },
+      bad: { text: 'Реакция', cls: 'b-bad' }
+    };
+    const list = document.getElementById('allergen-list');
+    let html = '';
+
+    state.sections.forEach(sec => {
+      const items = state.allergens.filter(a => a.sectionId === sec.id);
+      html += `
+        <div class="cat-header">
+          <div class="cat-title">${sec.title}</div>
+          <div class="cat-actions">
+            <button class="btn-pill" style="padding:4px 10px; font-size:12px;" onclick="openAddProductModal('${sec.id}')">+ Продукт</button>
+            ${sec.custom ? `<button class="act-btn del" style="width:26px; height:26px;" onclick="deleteSection('${sec.id}')">✕</button>` : ''}
+          </div>
+        </div>
+      `;
+
+      if (items.length === 0) {
+        html += `<div class="item-sub" style="margin-bottom:10px;">В этом разделе пока нет продуктов.</div>`;
+      } else {
+        items.forEach(a => {
+          const st = stMap[a.status] || stMap.none;
+          const det = [];
+          if (a.date) det.push('Проба: ' + formatDate(a.date));
+          if (a.form) det.push(a.form);
+          if (a.days && a.status !== 'none') det.push(a.days);
+          if (a.note) det.push(a.note);
+
+          html += `
+            <div class="list-item" onclick="openAllergenModal('${a.id}')" style="cursor:pointer;">
+              <div>
+                <div class="item-main">${a.name}</div>
+                ${a.hint ? `<div class="item-sub">${a.hint}</div>` : ''}
+                <div>
+                  <span class="badge ${st.cls}">${st.text}</span>
+                  ${a.allowDate ? `<span class="badge b-date">Можно с ${formatDate(a.allowDate)}</span>` : ''}
+                </div>
+                ${det.length ? `<div class="item-sub" style="color:var(--text); margin-top:6px;">${det.join(' • ')}</div>` : ''}
+              </div>
+              <div class="item-actions" onclick="event.stopPropagation()">
+                <button class="act-btn" onclick="openAllergenModal('${a.id}')">✎</button>
+                ${a.custom ? `<button class="act-btn del" onclick="deleteProduct('${a.id}')">✕</button>` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+    });
+    list.innerHTML = html;
+  }
+
+  function openAddSectionModal() {
+    document.getElementById('sec-name').value = '';
+    document.getElementById('sec-months').value = '6';
+    document.getElementById('add-sec-modal').classList.add('open');
+  }
+  function closeAddSectionModal() { document.getElementById('add-sec-modal').classList.remove('open'); }
+  function saveAddSectionModal() {
+    const title = document.getElementById('sec-name').value.trim();
+    if (!title) return alert('Введите название раздела');
+    const minMonths = parseInt(document.getElementById('sec-months').value) || 0;
+    state.sections.push({ id: 'sec_' + Date.now(), title, minMonths, custom: true });
+    saveState(); closeAddSectionModal(); renderAllergens(); renderProfileAndReminders();
+  }
+
+  function deleteSection(secId) {
+    if (!confirm('Удалить этот раздел вместе со всеми продуктами внутри?')) return;
+    state.sections = state.sections.filter(s => s.id !== secId);
+    state.allergens = state.allergens.filter(a => a.sectionId !== secId);
+    saveState(); renderAllergens(); renderProfileAndReminders();
+  }
+
+  function openAddProductModal(preselectSecId) {
+    const sel = document.getElementById('np-section');
+    sel.innerHTML = state.sections.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
+    if (preselectSecId) sel.value = preselectSecId;
+    document.getElementById('np-name').value = '';
+    document.getElementById('np-hint').value = '';
+    document.getElementById('np-allow-date').value = '';
+    document.getElementById('add-prod-modal').classList.add('open');
+  }
+  function closeAddProductModal() { document.getElementById('add-prod-modal').classList.remove('open'); }
+  function saveAddProductModal() {
+    const sectionId = document.getElementById('np-section').value;
+    const name = document.getElementById('np-name').value.trim();
+    if (!name) return alert('Введите название продукта');
+    const hint = document.getElementById('np-hint').value.trim();
+    const allowDate = document.getElementById('np-allow-date').value;
+    state.allergens.push({
+      id: 'prod_' + Date.now(), sectionId, name, hint, allowDate,
+      status: 'none', date: '', form: '', time: '', days: '', note: '', custom: true
+    });
+    saveState(); closeAddProductModal(); renderAllergens(); renderProfileAndReminders();
+  }
+
+  function deleteProduct(id) {
+    if (!confirm('Удалить этот продукт?')) return;
+    state.allergens = state.allergens.filter(a => a.id !== id);
+    saveState(); renderAllergens(); renderProfileAndReminders();
+  }
+
+  function openAllergenModal(id) {
+    const a = state.allergens.find(x => x.id === id);
+    if (!a) return;
+    editingAllergenId = id;
+    const sec = state.sections.find(s => s.id === a.sectionId);
+    document.getElementById('a-modal-title').textContent = a.name;
+    document.getElementById('a-modal-hint').textContent = (sec ? sec.title : '') + (a.hint ? ' • ' + a.hint : '');
+    document.getElementById('a-allow-date').value = a.allowDate || '';
+    document.getElementById('a-form').value = a.form || '';
+    document.getElementById('a-time').value = a.time || 'Утром (первая половина дня)';
+    document.getElementById('a-days').value = a.days || '1-й день пробы';
+    document.getElementById('a-status').value = a.status || 'try';
+    document.getElementById('a-date').value = a.date || new Date().toISOString().slice(0, 10);
+    document.getElementById('a-note').value = a.note || '';
+    document.getElementById('allergen-modal').classList.add('open');
+  }
+
+  function closeAllergenModal() { document.getElementById('allergen-modal').classList.remove('open'); }
+  function saveAllergenModal() {
+    const a = state.allergens.find(x => x.id === editingAllergenId);
+    if (a) {
+      a.allowDate = document.getElementById('a-allow-date').value;
+      a.status = document.getElementById('a-status').value;
+      if (a.status === 'none') { a.date = ''; a.form = ''; a.time = ''; a.days = ''; a.note = ''; }
+      else {
+        a.form = document.getElementById('a-form').value.trim();
+        a.time = document.getElementById('a-time').value;
+        a.days = document.getElementById('a-days').value;
+        a.date = document.getElementById('a-date').value;
+        a.note = document.getElementById('a-note').value.trim();
+      }
+      saveState(); renderAllergens(); renderProfileAndReminders();
+    }
+    closeAllergenModal();
   }
 
   function copySummary() {
     const todayStr = new Date().toDateString();
     const todaySleeps = state.sleeps.filter(s => s.end_time && new Date(s.start_time).toDateString() === todayStr);
-    const lines = ['Сводка по сну за сегодня:'];
+    const lines = [`Сводка (${state.babyName}) за сегодня:`];
     todaySleeps.reverse().forEach(s => {
       const mins = Math.round((new Date(s.end_time) - new Date(s.start_time)) / 60000);
-      lines.push(`• ${formatTime(s.start_time)} – ${formatTime(s.end_time)} (${mins} мин)`);
+      lines.push(`• Сон: ${formatTime(s.start_time)} – ${formatTime(s.end_time)} (${mins} мин)`);
     });
-    if (todaySleeps.length === 0) lines.push('Записей за сегодня пока нет.');
-    navigator.clipboard.writeText(lines.join('\n')).then(() => alert('Сводка скопирована! Вставьте ее в сообщение жене.'));
+    if (todaySleeps.length === 0) lines.push('• Снов за сегодня пока не записано.');
+    navigator.clipboard.writeText(lines.join('\n')).then(() => alert('Сводка скопирована!'));
   }
 
   function exportData() {
@@ -288,23 +1122,23 @@
     const reader = new FileReader();
     reader.onload = function(evt) {
       try {
-        const imported = JSON.parse(evt.target.result);
-        if (imported.sleeps && imported.growths) {
-          state = imported;
+        const imp = JSON.parse(evt.target.result);
+        if (imp.sleeps && imp.growths) {
+          state = { ...state, ...imp };
           saveState();
-          renderSleep();
-          renderGrowth();
-          alert('Данные успешно загружены!');
+          renderProfileAndReminders(); renderSleep(); renderGrowth(); renderAllergens(); renderEvents();
+          alert('Данные загружены!');
         }
-      } catch (err) {
-        alert('Неверный формат файла');
-      }
+      } catch (err) { alert('Неверный файл'); }
     };
     reader.readAsText(file);
   }
 
+  renderProfileAndReminders();
+  renderEvents();
   renderSleep();
   renderGrowth();
+  renderAllergens();
 </script>
 </body>
 </html>
