@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#12141d">
+  <title>Дневник малыша</title>
+  <script src="https://jsdelivr.net"></script>
+  <style>
+    :root {
+      --bg: #12141d;
+      --card: #1c1f2e;
+      --accent: #6c5ce7;
+      --sleep: #0984e3;
+      --wake: #00b894;
+      --text: #f5f6fa;
+      --muted: #8395a7;
+      --danger: #d63031;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
+    h1 { font-size: 22px; text-align: center; margin-bottom: 16px; font-weight: 700; }
+    
+    .tabs { display: flex; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+    .tab { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--muted); transition: 0.2s; }
+    .tab.active { background: var(--accent); color: #fff; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .card { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
+    .status-label { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .timer { font-size: 42px; font-weight: 800; font-variant-numeric: tabular-nums; margin-bottom: 20px; }
+    
+    .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; color: #fff; cursor: pointer; transition: 0.2s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-sleep { background: var(--sleep); }
+    .btn-wake { background: var(--wake); }
+    .btn-save { background: var(--accent); margin-top: 10px; }
+
+    .list-title { font-size: 16px; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
+    .item { background: var(--card); padding: 14px 16px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .item-main { font-size: 16px; font-weight: 600; }
+    .item-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .del-btn { background: none; border: none; color: var(--danger); font-size: 18px; padding: 6px 10px; cursor: pointer; }
+
+    .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+    input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #2f3542; background: #12141d; color: #fff; font-size: 16px; }
+    input:focus { outline: none; border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <h1>Дневник малыша</h1>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('sleep')">Сон</div>
+    <div class="tab" onclick="switchTab('growth')">Рост и вес</div>
+  </div>
+
+  <!-- ВКЛАДКА СОН -->
+  <div id="sleep-sec" class="section active">
+    <div class="card">
+      <div id="status-text" class="status-label">Загрузка...</div>
+      <div id="timer-display" class="timer">00:00:00</div>
+      <button id="sleep-btn" class="btn btn-sleep" onclick="toggleSleep()">Уснул</button>
+    </div>
+    <div class="list-title">Последние сны</div>
+    <div id="sleep-list"></div>
+  </div>
+
+  <!-- ВКЛАДКА РОСТ И ВЕС -->
+  <div id="growth-sec" class="section">
+    <div class="card">
+      <div class="input-group">
+        <input type="date" id="g-date">
+      </div>
+      <div class="input-group">
+        <input type="number" step="0.01" id="g-weight" placeholder="Вес (кг), напр. 3.65">
+        <input type="number" step="0.5" id="g-height" placeholder="Рост (см), напр. 53">
+      </div>
+      <button class="btn btn-save" onclick="addGrowth()">Добавить замер</button>
+    </div>
+    <div class="list-title">История замеров</div>
+    <div id="growth-list"></div>
+  </div>
+
+<script>
+  // ВСТАВЬТЕ СЮДА ДАННЫЕ ИЗ SUPABASE:
+  const SUPABASE_URL = 'sb_publishable_anXq6qGLiQtfyRAqGbb-zg_H7lHb9o2';
+  const SUPABASE_KEY = 'sb_secret_dESEriO7SyHG4_QVqZ9A0Q_sFOxSJdM';
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let activeSleep = null;
+  let lastWakeTime = null;
+  let timerInterval = null;
+
+  document.getElementById('g-date').valueAsDate = new Date();
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab + '-sec').classList.add('active');
+  }
+
+  function formatDuration(ms) {
+    if (ms < 0) ms = 0;
+    const totalSec = Math.floor(ms / 1000);
+    const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+    const s = String(totalSec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+  function formatTime(isoStr) {
+    const d = new Date(isoStr);
+    return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatDate(isoStr) {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  }
+
+  // --- ЛОГИКА СНА ---
+  async function loadSleep() {
+    const { data, error } = await db
+      .from('sleep_logs')
+      .select('*')
+      .order('start_time', { ascending: false })
+      .limit(20);
+
+    if (error) return console.error(error);
+
+    activeSleep = data.find(item => item.end_time === null) || null;
+    const finished = data.filter(item => item.end_time !== null);
+    lastWakeTime = finished.length > 0 ? finished[0].end_time : null;
+
+    updateSleepUI();
+    renderSleepList(finished);
+  }
+
+  function updateSleepUI() {
+    const btn = document.getElementById('sleep-btn');
+    const status = document.getElementById('status-text');
+    const display = document.getElementById('timer-display');
+
+    clearInterval(timerInterval);
+
+    if (activeSleep) {
+      status.textContent = 'Малыш спит';
+      btn.textContent = 'Проснулся';
+      btn.className = 'btn btn-wake';
+      timerInterval = setInterval(() => {
+        display.textContent = formatDuration(Date.now() - new Date(activeSleep.start_time));
+      }, 1000);
+      display.textContent = formatDuration(Date.now() - new Date(activeSleep.start_time));
+    } else {
+      btn.textContent = 'Уснул';
+      btn.className = 'btn btn-sleep';
+      if (lastWakeTime) {
+        status.textContent = 'Бодрствует';
+        timerInterval = setInterval(() => {
+          display.textContent = formatDuration(Date.now() - new Date(lastWakeTime));
+        }, 1000);
+        display.textContent = formatDuration(Date.now() - new Date(lastWakeTime));
+      } else {
+        status.textContent = 'Готов к записи';
+        display.textContent = '00:00:00';
+      }
+    }
+  }
+
+  async function toggleSleep() {
+    const btn = document.getElementById('sleep-btn');
+    btn.disabled = true;
+
+    if (activeSleep) {
+      await db.from('sleep_logs')
+        .update({ end_time: new Date().toISOString() })
+        .eq('id', activeSleep.id);
+    } else {
+      await db.from('sleep_logs')
+        .insert([{ start_time: new Date().toISOString() }]);
+    }
+
+    btn.disabled = false;
+    loadSleep();
+  }
+
+  async function deleteSleep(id) {
+    if (!confirm('Удалить запись о сне?')) return;
+    await db.from('sleep_logs').delete().eq('id', id);
+    loadSleep();
+  }
+
+  function renderSleepList(items) {
+    const list = document.getElementById('sleep-list');
+    if (items.length === 0) {
+      list.innerHTML = '<div class="item-sub" style="text-align:center;">Записей пока нет</div>';
+      return;
+    }
+    list.innerHTML = items.map(item => {
+      const durMs = new Date(item.end_time) - new Date(item.start_time);
+      const mins = Math.round(durMs / 60000);
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      const durText = h > 0 ? `${h} ч ${m} мин` : `${m} мин`;
+
+      return `
+        <div class="item">
+          <div>
+            <div class="item-main">${durText}</div>
+            <div class="item-sub">${formatDate(item.start_time)} • ${formatTime(item.start_time)} – ${formatTime(item.end_time)}</div>
+          </div>
+          <button class="del-btn" onclick="deleteSleep(${item.id})">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // --- ЛОГИКА РОСТА И ВЕСА ---
+  async function loadGrowth() {
+    const { data, error } = await db
+      .from('growth_logs')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('id', { ascending: false });
+
+    if (error) return console.error(error);
+
+    const list = document.getElementById('growth-list');
+    if (data.length === 0) {
+      list.innerHTML = '<div class="item-sub" style="text-align:center;">Замеров пока нет</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(item => {
+      const parts = [];
+      if (item.weight_kg) parts.push(`${item.weight_kg} кг`);
+      if (item.height_cm) parts.push(`${item.height_cm} см`);
+
+      return `
+        <div class="item">
+          <div>
+            <div class="item-main">${parts.join(' • ')}</div>
+            <div class="item-sub">${formatDate(item.date)}</div>
+          </div>
+          <button class="del-btn" onclick="deleteGrowth(${item.id})">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function addGrowth() {
+    const date = document.getElementById('g-date').value;
+    const weight = document.getElementById('g-weight').value;
+    const height = document.getElementById('g-height').value;
+
+    if (!weight && !height) return alert('Введите вес или рост');
+
+    await db.from('growth_logs').insert([{
+      date: date,
+      weight_kg: weight ? parseFloat(weight) : null,
+height_cm: height ? parseFloat(height) : null
+}]);
+document.getElementById('g-weight').value = '';
+document.getElementById('g-height').value = '';
+loadGrowth();
+}
+async function deleteGrowth(id) {
+if (!confirm('Удалить замер?')) return;
+await db.from('growth_logs').delete().eq('id', id);
+loadGrowth();
+}
+// --- ПОДПИСКА НА ОБНОВЛЕНИЯ В РЕАЛЬНОМ ВРЕМЕНИ ---
+db.channel('schema-db-changes')
+.on('postgres_changes', { event: '', schema: 'public', table: 'sleep_logs' }, () => loadSleep())
+.on('postgres_changes', { event: '', schema: 'public', table: 'growth_logs' }, () => loadGrowth())
+.subscribe();
+loadSleep();
+loadGrowth();
