@@ -221,6 +221,42 @@
     .weather-tip { background: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--text); display: flex; gap: 8px; align-items: flex-start; line-height: 1.35; }
     .weather-tip-icon { color: var(--olive); font-size: 16px; flex-shrink: 0; line-height: 1.2; }
     .weather-loading { font-size: 13px; color: var(--muted); text-align: center; padding: 10px 0; }
+
+    /* ===== ТЁМНАЯ ТЕМА ===== */
+    body.dark {
+      --bg: #1C1E1A; --card: #262923; --tile: #32352E; --olive: #8FA870;
+      --olive-light: #2E3A28; --dark: #E8EDE2; --text: #EDEFE8;
+      --muted: #9BA094; --border: #3D4238; --warn-bg: #3E3520; --warn-text: #E5C169;
+    }
+    body.dark .icon-badge { border-color: var(--card); }
+    body.dark .weather-tip, body.dark input, body.dark select { background: var(--tile); }
+    body.dark .b-date { background: #2A3242; color: #9FB8E8; }
+    body.dark .b-ok, body.dark .delta-pill, body.dark .hint-pill, body.dark .reminder-pill, body.dark .skill-date, body.dark .tooth-date, body.dark .vaccine-date { color: #C4D9A8; }
+
+    /* ===== ХРОНИКА ДНЯ ===== */
+    .age-counter { text-align: center; background: var(--card); border-radius: 22px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    .age-days { font-size: 34px; font-weight: 700; color: var(--olive); }
+    .age-months { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .timeline { position: relative; padding-left: 20px; }
+    .timeline::before { content: ''; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+    .tl-item { position: relative; padding: 6px 0 6px 8px; }
+    .tl-item::before { content: ''; position: absolute; left: -19px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: var(--olive); border: 2px solid var(--card); }
+    .tl-time { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .tl-text { font-size: 14px; color: var(--text); line-height: 1.3; }
+
+    /* ===== ГРАФИК РОСТА ===== */
+    .chart-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+    .who-chart { width: 100%; height: auto; display: block; }
+    .who-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); margin-top: 8px; }
+    .who-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .lg-line { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+
+    /* ===== МЕДАЛИ ===== */
+    .medals { display: flex; gap: 8px; flex-wrap: wrap; }
+    .medal { background: linear-gradient(135deg, #FFF3D6, #FFE9B8); color: #8A6D1A; border-radius: 14px; padding: 10px 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+    /* ===== АВАТАР ===== */
+    .baby-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
   </style>
 </head>
 <body>
@@ -241,7 +277,7 @@
 
   <div class="baby-card" onclick="openProfileModal()">
     <div class="baby-left">
-      <div class="baby-avatar">👶</div>
+      <div class="baby-avatar" id="baby-avatar-box">👶</div>
       <div>
         <div class="baby-name" id="baby-name-display">Малыш</div>
         <div class="baby-age" id="baby-age-display">Нажмите, чтобы указать дату рождения</div>
@@ -254,6 +290,12 @@
     
     <!-- Погодная плашка на главной -->
     <div id="home-weather-card" class="weather-card" style="display:none;"></div>
+
+    <!-- Счётчик дней -->
+    <div class="age-counter" id="age-counter" style="display:none;">
+      <div class="age-days" id="age-days-big">0</div>
+      <div class="age-months" id="age-months-sub"></div>
+    </div>
 
     <div class="info-card" id="home-reminder-card">
       <div class="info-tag" id="home-rem-tag">Питание и прикорм</div>
@@ -295,9 +337,39 @@
           <div class="tile-sub" id="tile-walk-sub">Данных нет</div>
         </div>
       </div>
+
+      <div class="tracker-tile" onclick="openTab('growth')">
+        <div class="tile-icon">📏</div>
+        <div>
+          <div class="tile-title">Рост и вес</div>
+          <div class="tile-sub" id="tile-growth-sub">Данных еще нет</div>
+        </div>
+      </div>
+
+      <div class="tracker-tile" onclick="openTab('events')">
+        <div class="tile-icon">🎂</div>
+        <div>
+          <div class="tile-title">События</div>
+          <div class="tile-sub" id="tile-events-sub">Добавить праздник</div>
+        </div>
+      </div>
+
+      <div class="tracker-tile" onclick="openTab('allergens')">
+        <div class="tile-icon">🥄</div>
+        <div>
+          <div class="tile-title">Аллергены</div>
+          <div class="tile-sub" id="tile-allergen-sub">Данных еще нет</div>
+        </div>
+      </div>
     </div>
 
     <div class="sec-heading" style="font-size:16px; color:var(--muted); margin-top:22px;">Ещё разделы — в меню «+»</div>
+
+    <!-- Хроника дня -->
+    <div class="sec-heading" style="margin-top:8px;"><span>Хроника дня</span></div>
+    <div class="info-card">
+      <div class="timeline" id="day-timeline"></div>
+    </div>
   </div>
 
   <div id="page-sleep" class="page">
@@ -373,6 +445,25 @@
       </div>
     </div>
 
+    <div class="info-card">
+      <div class="info-title" style="font-size:17px;">🥄 Прикорм</div>
+      <div class="info-desc">Что и сколько съел малыш</div>
+      <div class="input-row">
+        <input type="text" id="solid-name" placeholder="Продукт, напр. Кабачок" list="solid-name-list">
+        <datalist id="solid-name-list"></datalist>
+      </div>
+      <div class="input-row">
+        <input type="number" id="solid-grams" placeholder="Объём (г), напр. 50">
+        <select id="solid-reaction">
+          <option value="Ел с удовольствием">😊 С удовольствием</option>
+          <option value="Ел нормально">😐 Нормально</option>
+          <option value="Отказался">😠 Отказался</option>
+          <option value="Была реакция">⚠️ Была реакция</option>
+        </select>
+      </div>
+      <button class="btn-olive" onclick="addSolidFood()">Записать прикорм</button>
+    </div>
+
     <div class="info-card" style="text-align:center;">
       <div class="info-desc" style="margin-bottom:10px;">Малыш отказывается от груди или бутылочки?</div>
       <button class="btn-light" onclick="addFeedRefusal()">⛔ Отметить отказ от еды</button>
@@ -401,6 +492,7 @@
         </div>
       </div>
       <div class="item-sub" style="margin-top:14px; text-align:center;">При выборе «Стул» или «Оба» откроется форма с цветом и консистенцией.</div>
+      <div class="reminder-pill overdue" id="diaper-health-warn" style="display:none; margin-top:12px;"></div>
     </div>
     <div class="sec-heading"><span>История замен</span></div>
     <div id="diaper-list"></div>
@@ -456,6 +548,23 @@
       <button class="btn-pill olive" onclick="openDoctorCardModal()">📋 Карта для врача</button>
     </div>
     <div class="info-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div class="info-title" style="font-size:17px; margin:0;">📈 Нормы ВОЗ</div>
+        <div class="chart-tabs">
+          <button class="weather-tab active" id="wt-tab-weight" onclick="renderWhoChart('weight')">Вес</button>
+          <button class="weather-tab" id="wt-tab-height" onclick="renderWhoChart('height')">Рост</button>
+        </div>
+      </div>
+      <svg class="who-chart" id="who-chart" viewBox="0 0 340 200" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="who-legend">
+        <span><span class="lg-line" style="background:var(--olive);"></span> Замеры</span>
+        <span><span class="lg-line" style="background:#D9C89E;"></span> Коридор 15–85</span>
+        <span><span class="lg-line" style="background:#E8D5C0;"></span> 3–97</span>
+        <span><span class="lg-line" style="background:#4E6335;"></span> Медиана (50)</span>
+      </div>
+      <div class="item-sub" id="who-status" style="margin-top:8px;"></div>
+    </div>
+    <div class="info-card">
       <div class="info-tag">Новый замер (после приёма)</div>
       <div class="input-row"><input type="date" id="g-date"></div>
       <div class="input-row">
@@ -490,7 +599,33 @@
     </div>
 
     <div class="sec-heading" style="margin-top:8px;"><span>Навыки по месяцам</span></div>
+    <div class="info-card" id="medals-card" style="display:none;">
+      <div class="info-title" style="font-size:17px;">🏅 Достижения</div>
+      <div class="medals" id="medals-list"></div>
+    </div>
     <div id="skills-list"></div>
+  </div>
+
+  <div id="page-health" class="page">
+    <div class="info-card">
+      <div class="info-title" style="font-size:17px;">🩺 Запись о здоровье</div>
+      <div class="info-desc">Температура, лекарства и жалобы. Особенно удобно ночью — видно, когда в последний раз давали жаропонижающее.</div>
+      <div class="input-row">
+        <input type="datetime-local" id="h-time">
+      </div>
+      <div class="input-row">
+        <input type="number" step="0.1" id="h-temp" placeholder="Температура, напр. 38.2">
+        <input type="text" id="h-med" placeholder="Лекарство и доза, напр. Нурофен 2.5 мл">
+      </div>
+      <div class="input-row"><input type="text" id="h-note" placeholder="Жалобы / симптомы (необязательно)"></div>
+      <button class="btn-olive" onclick="addHealthRecord()">Сохранить запись</button>
+    </div>
+    <div class="info-card" id="temp-chart-card" style="display:none;">
+      <div class="info-title" style="font-size:17px;">🌡️ Динамика температуры (последние записи)</div>
+      <svg class="who-chart" id="temp-chart" viewBox="0 0 340 160" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="sec-heading"><span>История записей</span></div>
+    <div id="health-list"></div>
   </div>
 
   <div id="page-teeth" class="page">
@@ -637,6 +772,7 @@
       <div class="info-desc">Скопируйте текстовую сводку за день или передайте файл резервной копии.</div>
       <button class="btn-olive" style="margin-bottom:10px;" onclick="copySummary()">Скопировать сводку за сегодня</button>
       <button class="btn-light" style="margin-bottom:10px;" onclick="exportData()">Скачать файл копии (.json)</button>
+      <button class="btn-light" style="margin-bottom:10px;" onclick="restoreBackupFromIDB()">Восстановить из локальной копии (IndexedDB)</button>
       <button class="btn-light" onclick="document.getElementById('import-file').click()">Загрузить файл от партнера</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
@@ -692,11 +828,11 @@
             <div class="tile-sub" id="sheet-feed-sub">Грудь / бутылочка</div>
           </div>
         </div>
-        <div class="tracker-tile" onclick="closeQuickSheet(); addDiaper('Мокрый');">
+        <div class="tracker-tile" onclick="closeQuickSheet(); openTab('diaper');">
           <div class="tile-icon">💧</div>
           <div>
-            <div class="tile-title">Мокрый</div>
-            <div class="tile-sub">Подгузник +1</div>
+            <div class="tile-title">Подгузник</div>
+            <div class="tile-sub">Перейти в раздел</div>
           </div>
         </div>
         <div class="tracker-tile" onclick="closeQuickSheet(); toggleWalkQuick();">
@@ -739,6 +875,13 @@
           <div>
             <div class="tile-title">Сводка и обмен</div>
             <div class="tile-sub">Скопировать день</div>
+          </div>
+        </div>
+        <div class="tracker-tile" onclick="closeQuickSheet(); openTab('health');">
+          <div class="tile-icon">🩺</div>
+          <div>
+            <div class="tile-title">Здоровье</div>
+            <div class="tile-sub">Температура, лекарства</div>
           </div>
         </div>
         <div class="tracker-tile" onclick="closeQuickSheet(); openTab('development');">
@@ -837,6 +980,19 @@
       <!-- Поле для города -->
       <label class="input-label">Город для погоды (необязательно)</label>
       <div class="input-row"><input type="text" id="p-city" placeholder="Например: Москва. Если пусто - по GPS"></div>
+      <label class="input-label">Фото малыша (аватар)</label>
+      <button class="photo-upload-btn" style="padding:14px;" onclick="document.getElementById('avatar-input').click()">
+        <div class="photo-upload-icon">📷</div>
+        <div style="font-size:13px;">Выбрать фото для аватарки</div>
+      </button>
+      <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+      <label class="input-label">Тема оформления</label>
+      <div class="input-row">
+        <select id="p-theme" onchange="applyTheme(this.value)">
+          <option value="light">☀️ Светлая</option>
+          <option value="dark">🌙 Тёмная</option>
+        </select>
+      </div>
       <div class="input-row" style="margin-top:14px;">
         <button class="btn-light" onclick="closeProfileModal()">Отмена</button>
         <button class="btn-olive" onclick="saveProfileModal()">Сохранить</button>
@@ -1183,14 +1339,25 @@
   // Погодные иконки
   const WEATHER_ICONS = {
     0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️',
-    51: '🌦️', 53: '🌦️', 55: '🌧️', 61: '🌧️', 63: '🌧️', 65: '🌧️',
-    71: '❄️', 73: '❄️', 75: '❄️', 80: '🌧️', 81: '🌧️', 82: '🌧️',
+    51: '🌦️', 53: '🌦️', 55: '🌧️', 56: '🌧️', 57: '🌧️',
+    61: '🌧️', 63: '🌧️', 65: '🌧️', 66: '🌧️', 67: '🌧️',
+    71: '❄️', 73: '❄️', 75: '❄️', 77: '❄️', 80: '🌧️', 81: '🌧️', 82: '🌧️',
     85: '🌨️', 86: '🌨️', 95: '⛈️', 96: '⛈️', 99: '⛈️'
   };
 
-  let oldData = JSON.parse(localStorage.getItem(STORAGE_KEY))
-             || JSON.parse(localStorage.getItem('baby_tracker_data_v12'))
-             || {};
+  function safeParse(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (e) {
+      console.warn('Повреждённые данные в хранилище:', key, e);
+      return null;
+    }
+  }
+
+  let oldData = safeParse(STORAGE_KEY) || safeParse('baby_tracker_data_v12') || {};
 
   let state = {
     parentName: oldData.parentName || 'Семья',
@@ -1219,7 +1386,12 @@
     notifyFeed: oldData.notifyFeed !== false,
     notifyWalk: oldData.notifyWalk !== false,
     lastNotifiedFeed: oldData.lastNotifiedFeed || '',
-    lastNotifiedWalk: oldData.lastNotifiedWalk || ''
+    lastNotifiedWalk: oldData.lastNotifiedWalk || '',
+    solids: oldData.solids || [],
+    healthRecords: oldData.healthRecords || [],
+    theme: oldData.theme || 'light',
+    avatar: oldData.avatar || '',
+    lastBackup: oldData.lastBackup || ''
   };
 
   // Состояние погоды
@@ -1251,7 +1423,10 @@
   let currentPhotoId = null;
 
   document.getElementById('g-date').valueAsDate = new Date();
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveBackupToIDB(); // дублируем в IndexedDB — надёжнее при очистке кэша
+  }
   function setTxt(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
 
   function openTab(tabName) {
@@ -1263,6 +1438,151 @@
     if (nav) nav.classList.add('active');
     window.scrollTo(0, 0);
     if (tabName === 'notifications') renderNotificationsPage();
+    if (tabName === 'health') renderHealth();
+    if (tabName === 'home') renderDayTimeline();
+  }
+
+  // ============ ТЕМА / АВАТАР / БЭКАП ============
+  function applyTheme(mode) {
+    state.theme = mode;
+    saveState();
+    document.body.classList.toggle('dark', mode === 'dark');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = mode === 'dark' ? '#1C1E1A' : '#F5EFE5';
+    const sel = document.getElementById('p-theme');
+    if (sel) sel.value = mode;
+  }
+
+  function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    compressImage(file, 200, 0.8).then(dataUrl => {
+      state.avatar = dataUrl;
+      saveState();
+      renderAvatar();
+      event.target.value = '';
+    }).catch(() => alert('Не удалось загрузить фото'));
+  }
+
+  function renderAvatar() {
+    const box = document.getElementById('baby-avatar-box');
+    if (!box) return;
+    box.innerHTML = state.avatar ? `<img src="${state.avatar}" alt="Малыш">` : '👶';
+  }
+
+  function saveBackupToIDB() {
+    try {
+      const req = indexedDB.open('baby_tracker_backup', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('backups');
+      req.onsuccess = e => {
+        const db = e.target.result;
+        try {
+          const tx = db.transaction('backups', 'readwrite');
+          tx.objectStore('backups').put(JSON.stringify(state), 'latest');
+          state.lastBackup = new Date().toISOString();
+          tx.oncomplete = () => db.close();
+        } catch (err) {}
+      };
+    } catch (e) {}
+  }
+
+  function checkBackupAge() {
+    if (!state.lastBackup) return;
+    const days = Math.floor((Date.now() - new Date(state.lastBackup).getTime()) / 86400000);
+    if (days >= 7) {
+      setTimeout(() => alert(`💾 Вы не скачивали резервную копию ${days} дней.\n\nОткройте «Сводка и обмен» и скачайте файл копии, чтобы не потерять данные.`), 2000);
+      state.lastBackup = '';
+    }
+  }
+
+  function restoreBackupFromIDB() {
+    try {
+      const req = indexedDB.open('baby_tracker_backup', 1);
+      req.onsuccess = e => {
+        const db = e.target.result;
+        try {
+          const tx = db.transaction('backups', 'readonly');
+          const get = tx.objectStore('backups').get('latest');
+          get.onsuccess = () => {
+            if (get.result) {
+              try {
+                const imp = JSON.parse(get.result);
+                if (confirm('Восстановить данные из локальной копии IndexedDB? Текущие данные будут заменены.')) {
+                  state = { ...state, ...imp };
+                  saveState(); location.reload();
+                }
+              } catch (err) { alert('Копия повреждена'); }
+            } else alert('Локальная копия не найдена');
+          };
+        } catch (err) { alert('Копия не найдена'); }
+      };
+    } catch (e) { alert('IndexedDB недоступна'); }
+  }
+
+  // ============ ХРОНИКА ДНЯ ============
+  function renderDayTimeline() {
+    const el = document.getElementById('day-timeline');
+    if (!el) return;
+    const todayStr = new Date().toDateString();
+    const items = [];
+
+    state.sleeps.filter(s => s.end_time && new Date(s.start_time).toDateString() === todayStr).forEach(s => {
+      const mins = Math.round((new Date(s.end_time) - new Date(s.start_time)) / 60000);
+      items.push({ t: s.end_time, txt: `😴 Проснулся (сон ${mins} мин)` });
+    });
+    state.feeds.forEach(f => {
+      const ft = f.start_time || f.time;
+      if (new Date(ft).toDateString() !== todayStr) return;
+      if (f.type === 'refusal') items.push({ t: f.time, txt: '⛔ Отказ от еды' });
+      else if (f.type === 'bottle') items.push({ t: f.start_time, txt: `🍼 ${f.bottleType} ${f.ml} мл` });
+      else if (f.type === 'solid') items.push({ t: f.start_time, txt: `🥄 Прикорм: ${f.name} ${f.grams ? f.grams + ' г' : ''} (${f.reaction})` });
+      else if (f.end_time) {
+        const mins = Math.max(1, Math.round((new Date(f.end_time) - new Date(f.start_time)) / 60000));
+        items.push({ t: f.end_time, txt: `🤱 Покормились (${f.side === 'left' ? 'левая' : 'правая'} грудь, ${mins} мин)` });
+      }
+    });
+    state.diapers.filter(d => new Date(d.time).toDateString() === todayStr).forEach(d => {
+      items.push({ t: d.time, txt: `🧷 Подгузник (${d.kind.toLowerCase()}${d.color ? ', ' + d.color : ''})` });
+    });
+    state.walks.filter(w => w.end_time && new Date(w.start_time).toDateString() === todayStr).forEach(w => {
+      const mins = Math.round((new Date(w.end_time) - new Date(w.start_time)) / 60000);
+      items.push({ t: w.end_time, txt: `🚶 Прогулка (${mins >= 60 ? Math.floor(mins / 60) + ' ч ' + (mins % 60) + ' мин' : mins + ' мин'})` });
+    });
+    state.healthRecords.filter(h => new Date(h.time).toDateString() === todayStr).forEach(h => {
+      let txt = '🩺';
+      if (h.temp) txt += ` Температура ${h.temp}°`;
+      if (h.med) txt += (h.temp ? ', дали ' : ' Дали ') + h.med;
+      if (h.note) txt += (h.temp || h.med ? '. ' : ' ') + h.note;
+      items.push({ t: h.time, txt });
+    });
+    state.momMoods.filter(m => new Date(m.date).toDateString() === todayStr).forEach(m => {
+      const info = MOM_MOODS[m.mood] || { emoji: '❔', label: '' };
+      items.push({ t: m.date, txt: `💚 Мама: ${info.label}` });
+    });
+    state.babyMoods.filter(m => new Date(m.date).toDateString() === todayStr).forEach(m => {
+      const info = BABY_MOODS[m.mood] || { emoji: '❔', label: '' };
+      items.push({ t: m.date, txt: `🙂 Настроение: ${info.label}` });
+    });
+
+    items.sort((a, b) => new Date(a.t) - new Date(b.t));
+    if (items.length === 0) {
+      el.innerHTML = '<div class="item-sub" style="text-align:center;">Сегодня пока ничего не записано.<br>Начните с плиток выше — всё появится здесь.</div>';
+      return;
+    }
+    el.innerHTML = items.map(i => `<div class="tl-item"><div class="tl-time">${formatTime(i.t)}</div><div class="tl-text">${i.txt}</div></div>`).join('');
+  }
+
+  // ============ СЧЁТЧИК ДНЕЙ ============
+  function renderAgeCounter() {
+    const card = document.getElementById('age-counter');
+    const daysEl = document.getElementById('age-days-big');
+    const subEl = document.getElementById('age-months-sub');
+    if (!card || !daysEl || !subEl) return;
+    const age = getAgeStats();
+    if (!age || age.isFuture) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    daysEl.textContent = `Нам ${age.diffDays}`;
+    subEl.textContent = age.months > 0 ? `${age.months} мес. ${age.remDays} дн. от рождения` : 'дней от рождения';
   }
 
   function openQuickSheet() { document.getElementById('quick-sheet').classList.add('open'); }
@@ -1278,7 +1598,7 @@
   }
 
   function formatTime(iso) { return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }); }
-  function formatDate(iso) { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }); }
+  function formatDate(iso) { return new Date(iso && iso.includes('T') ? iso : (iso ? iso + 'T00:00:00' : null)).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }); }
   function formatFullDate(iso) { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); }
   function formatDateShort(iso) {
     if (!iso) return '';
@@ -1312,6 +1632,8 @@
     document.getElementById('parent-name-display').textContent = state.parentName || 'Семья';
     document.getElementById('baby-name-display').textContent = state.babyName || 'Малыш';
     document.getElementById('sheet-baby-name').textContent = state.babyName || 'Малыш';
+    renderAvatar();
+    renderAgeCounter();
 
     const age = getAgeStats();
     let ageText = 'Нажмите, чтобы указать дату рождения';
@@ -1389,6 +1711,7 @@
     state.parentName = document.getElementById('p-parent').value.trim() || 'Семья';
     state.babyName = document.getElementById('p-baby').value.trim() || 'Малыш';
     state.birthDate = document.getElementById('p-birth').value;
+    if (document.getElementById('p-theme')) state.theme = document.getElementById('p-theme').value;
     const newCity = document.getElementById('p-city').value.trim();
     if (state.city !== newCity) {
       state.city = newCity;
@@ -1414,7 +1737,10 @@
   }
 
   // ============ ПОГОДА ============
+  let weatherFetchInFlight = null;
   async function fetchWeather() {
+    if (weatherFetchInFlight) return weatherFetchInFlight; // дедупликация параллельных запросов
+    weatherFetchInFlight = (async () => {
     try {
       let lat, lon, cityName = state.city;
 
@@ -1462,7 +1788,11 @@
       }
     } catch (e) {
       console.warn('Ошибка загрузки погоды', e);
+    } finally {
+      weatherFetchInFlight = null;
     }
+    })();
+    return weatherFetchInFlight;
   }
 
   function getWeatherIcon(code) {
@@ -1473,8 +1803,8 @@
     if ([0].includes(code)) return 'ясно';
     if ([1, 2, 3].includes(code)) return 'облачно';
     if ([45, 48].includes(code)) return 'туман';
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return 'дождь';
-    if ([71, 73, 75, 85, 86].includes(code)) return 'снег';
+    if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return 'дождь';
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return 'снег';
     if ([95, 96, 99].includes(code)) return 'гроза';
     return '';
   }
@@ -1720,7 +2050,7 @@
     const active = state.sleeps.find(s => !s.end_time);
     if (active) active.end_time = new Date().toISOString();
     else state.sleeps.unshift({ id: String(Date.now()), start_time: new Date().toISOString(), end_time: null });
-    saveState(); renderSleep();
+    saveState(); renderSleep(); renderDayTimeline();
   }
 
   function openEditActive() {
@@ -1823,12 +2153,17 @@
 
       const ageAtVisit = getAgeStats(new Date(g.date + 'T00:00:00'));
       const ageLabel = ageAtVisit && !ageAtVisit.isFuture ? ` • ${ageAtVisit.months} мес. ${ageAtVisit.remDays} дн.` : '';
+      let bmiHtml = '';
+      if (g.weight_kg && g.height_cm) {
+        const bmi = (g.weight_kg / Math.pow(g.height_cm / 100, 2)).toFixed(1);
+        bmiHtml = `<span class="badge b-ok" style="margin-left:4px;">ИМТ ${bmi}</span>`;
+      }
 
       return `
         <div class="list-item">
           <div>
             <div class="item-main">${parts.join(' • ')}</div>
-            <div class="item-sub">${formatFullDate(g.date)}${ageLabel}</div>
+            <div class="item-sub">${formatFullDate(g.date)}${ageLabel}${bmiHtml}</div>
             ${g.note ? `<div class="item-sub" style="color:var(--text); margin-top:4px;">💬 ${g.note}</div>` : ''}
           </div>
           <button class="act-btn del" onclick="deleteGrowth('${g.id}')">✕</button>
@@ -1848,7 +2183,7 @@
     document.getElementById('g-weight').value = '';
     document.getElementById('g-height').value = '';
     document.getElementById('g-note').value = '';
-    renderGrowth();
+    renderGrowth(); renderWhoChart();
   }
 
   function deleteGrowth(id) {
@@ -1915,7 +2250,7 @@
   function renderFeed() {
     const activeFeed = state.feeds.find(f => f.type === 'breast' && !f.end_time) || null;
     const finished = state.feeds
-      .filter(f => f.type === 'refusal' || f.type === 'bottle' || f.end_time)
+      .filter(f => f.type === 'refusal' || f.type === 'bottle' || f.type === 'solid' || f.end_time)
       .sort((a, b) => new Date(b.start_time || b.time) - new Date(a.start_time || a.time));
     const lastBreast = finished.find(f => f.type === 'breast');
     const lastAnyFeed = finished.find(f => f.type !== 'refusal');
@@ -2032,6 +2367,12 @@
     const avgCount = daysWithFeeds > 0 ? (totalFeeds / daysWithFeeds).toFixed(1) : 0;
     document.getElementById('feed-week-avg').textContent = `Ср: ${avgCount}/день`;
 
+    const nameList = document.getElementById('solid-name-list');
+    if (nameList) {
+      const names = [...new Set(state.feeds.filter(f => f.type === 'solid').map(f => f.name))].slice(0, 20);
+      nameList.innerHTML = names.map(n => `<option value="${n}">`).join('');
+    }
+
     const list = document.getElementById('feed-history-list');
     if (finished.length === 0) { list.innerHTML = '<div class="item-sub" style="text-align:center;">Записей пока нет</div>'; return; }
     list.innerHTML = finished.map(f => {
@@ -2050,6 +2391,9 @@
       if (f.type === 'bottle') {
         mainTitle = `🍼 ${f.bottleType || 'Бутылочка'}: ${f.ml} мл`;
         subInfo = `${formatDate(f.start_time)} • ${formatTime(f.start_time)}`;
+      } else if (f.type === 'solid') {
+        mainTitle = `🥄 Прикорм: ${f.name}${f.grams ? ' (' + f.grams + ' г)' : ''}`;
+        subInfo = `${formatDate(f.start_time)} • ${formatTime(f.start_time)} • ${f.reaction}`;
       } else {
         const mins = Math.max(1, Math.round((new Date(f.end_time) - new Date(f.start_time)) / 60000));
         mainTitle = `🤱 ${f.side === 'left' ? 'Левая грудь' : 'Правая грудь'} (${mins} мин)`;
@@ -2073,7 +2417,7 @@
       active.end_time = new Date().toISOString();
       if (active.side !== side) state.feeds.unshift({ id: String(Date.now() + 1), type: 'breast', side, start_time: new Date().toISOString(), end_time: null });
     } else state.feeds.unshift({ id: String(Date.now()), type: 'breast', side, start_time: new Date().toISOString(), end_time: null });
-    saveState(); renderFeed();
+    saveState(); renderFeed(); renderDayTimeline();
   }
   function addBottleFeed() {
     const ml = parseInt(document.getElementById('bottle-ml').value);
@@ -2081,11 +2425,21 @@
     const bottleType = document.getElementById('bottle-type').value;
     state.feeds.unshift({ id: String(Date.now()), type: 'bottle', bottleType, ml, start_time: new Date().toISOString() });
     document.getElementById('bottle-ml').value = '';
-    saveState(); renderFeed();
+    saveState(); renderFeed(); renderDayTimeline();
+  }
+  function addSolidFood() {
+    const name = document.getElementById('solid-name').value.trim();
+    if (!name) return alert('Укажите продукт');
+    const grams = parseInt(document.getElementById('solid-grams').value) || 0;
+    const reaction = document.getElementById('solid-reaction').value;
+    state.feeds.unshift({ id: String(Date.now()), type: 'solid', name, grams, reaction, start_time: new Date().toISOString() });
+    document.getElementById('solid-name').value = '';
+    document.getElementById('solid-grams').value = '';
+    saveState(); renderFeed(); renderDayTimeline();
   }
   function addFeedRefusal() {
     state.feeds.unshift({ id: String(Date.now()), type: 'refusal', time: new Date().toISOString() });
-    saveState(); renderFeed();
+    saveState(); renderFeed(); renderDayTimeline();
   }
   function saveFeedReminder() {
     const v = parseInt(document.getElementById('feed-reminder-mins').value);
@@ -2127,6 +2481,16 @@
       lastInfo.textContent = `Последняя: ${formatTime(last.time)} (${last.kind}${extra.length ? ', ' + extra.join(', ') : ''}) • Сегодня: ${todayCount}`;
     } else lastInfo.textContent = 'Записей пока нет';
 
+    // Предупреждение о зелёном стуле
+    const greenToday = sorted.filter(d => new Date(d.time).toDateString() === todayStr && d.color && d.color.includes('Зеленый')).length;
+    const warnEl = document.getElementById('diaper-health-warn');
+    if (warnEl) {
+      if (greenToday >= 3) {
+        warnEl.style.display = 'block';
+        warnEl.textContent = `⚠️ За сегодня ${greenToday} зелёных стула. Если это продолжается больше суток или есть другие симптомы — возможно, стоит показаться врачу.`;
+      } else warnEl.style.display = 'none';
+    }
+
     const list = document.getElementById('diaper-list');
     if (sorted.length === 0) { list.innerHTML = '<div class="item-sub" style="text-align:center;">Замен пока не записано</div>'; return; }
     const iconMap = { 'Мокрый': '💧', 'Стул': '💩', 'Смешанный': '💧💩' };
@@ -2150,7 +2514,7 @@
   function addDiaper(kind) {
     if (kind === 'Мокрый') {
       state.diapers.unshift({ id: String(Date.now()), kind, time: new Date().toISOString(), color: '', consistency: '', note: '' });
-      saveState(); renderDiapers();
+      saveState(); renderDiapers(); renderDayTimeline();
       return;
     }
     diaperEditKind = kind;
@@ -2186,7 +2550,7 @@
       consistency: diaperEditConsistency,
       note: document.getElementById('diaper-note').value.trim()
     });
-    saveState(); closeDiaperModal(); renderDiapers();
+    saveState(); closeDiaperModal(); renderDiapers(); renderDayTimeline();
   }
   function deleteDiaper(id) {
     if (!confirm('Удалить запись?')) return;
@@ -2696,7 +3060,7 @@
     const active = state.walks.find(w => !w.end_time);
     if (active) active.end_time = new Date().toISOString();
     else state.walks.unshift({ id: String(Date.now()), start_time: new Date().toISOString(), end_time: null });
-    saveState(); renderWalks();
+    saveState(); renderWalks(); renderDayTimeline();
   }
   function openAddWalk() {
     const now = new Date();
@@ -2791,7 +3155,7 @@
     const entry = { id: String(Date.now()), mood: editingMoodValue, date: new Date(dt).toISOString(), note };
     if (editingMoodType === 'mom') state.momMoods.unshift(entry);
     else state.babyMoods.unshift(entry);
-    saveState(); closeMoodModal();
+    saveState(); closeMoodModal(); renderDayTimeline();
     if (editingMoodType === 'mom') renderMomMoods();
     else renderBabyMoods();
   }
@@ -2928,7 +3292,7 @@
       const n = new Notification(title, {
         body,
         tag: 'baby-tracker-' + Date.now(),
-        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">👶</text></svg>'
+        icon: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">👶</text></svg>')
       });
       n.onclick = () => { window.focus(); n.close(); };
     } catch (e) { console.warn(e); }
@@ -2957,7 +3321,7 @@
     if (state.notifyFeed) {
       const recentFeeds = state.feeds.filter(f => f.type !== 'refusal' && (f.start_time || f.time));
       if (recentFeeds.length > 0) {
-        const last = recentFeeds.sort((a, b) => new Date(b.start_time || b.time) - new Date(a.start_time || a.time))[0];
+        const last = [...recentFeeds].sort((a, b) => new Date(b.start_time || b.time) - new Date(a.start_time || a.time))[0];
         const lastTime = new Date(last.start_time || last.time).getTime();
         const elapsed = Math.round((now - lastTime) / 60000);
         const key = 'feed_' + last.id;
@@ -2974,7 +3338,7 @@
       if (hour >= 9 && hour < 19) {
         let lastWalkTime = null;
         if (state.walks.length > 0) {
-          const last = state.walks.sort((a, b) => new Date(b.start_time) - new Date(a.start_time))[0];
+          const last = [...state.walks].sort((a, b) => new Date(b.start_time) - new Date(a.start_time))[0];
           lastWalkTime = new Date(last.end_time || last.start_time).getTime();
         }
         const threshold = state.walkReminderHours * 3600000;
@@ -3091,7 +3455,190 @@
     reader.readAsText(file);
   }
 
+  // ============ ГРАФИК ВОЗ ============
+  const WHO_WEIGHT = { // кг, месяцы: [3%, 15%, 50%, 85%, 97%]
+    0:[2.1,2.5,3.3,3.9,4.4],1:[3.0,3.4,4.5,5.1,5.8],2:[3.9,4.3,5.6,6.3,7.1],3:[4.5,5.0,6.4,7.2,8.0],
+    4:[5.0,5.6,7.0,7.8,8.7],5:[5.4,6.0,7.5,8.4,9.3],6:[5.7,6.4,7.9,8.9,9.8],7:[6.0,6.7,8.3,9.2,10.3],
+    8:[6.3,6.9,8.6,9.6,10.7],9:[6.5,7.2,8.9,10.0,11.0],10:[6.7,7.5,9.2,10.2,11.4],11:[6.9,7.7,9.4,10.5,11.7],
+    12:[7.0,7.9,9.6,10.9,12.1],18:[8.1,9.1,11.3,12.7,14.0],24:[8.8,10.0,12.2,13.7,15.3]
+  };
+  const WHO_HEIGHT = { // см
+    0:[44.9,46.7,49.9,51.0,52.9],1:[47.6,50.0,53.7,54.7,56.8],2:[50.0,53.0,57.1,58.3,60.5],3:[51.9,55.3,59.8,61.1,63.3],
+    4:[53.4,57.1,62.1,63.5,65.7],5:[54.7,58.7,64.0,65.4,67.7],6:[55.9,60.0,65.7,67.1,69.5],7:[57.0,61.3,67.2,68.7,71.1],
+    8:[58.0,62.4,68.5,70.1,72.5],9:[58.9,63.5,69.8,71.4,73.9],10:[59.8,64.6,71.0,72.6,75.2],11:[60.6,65.6,72.1,73.9,76.5],
+    12:[61.4,66.6,73.3,75.0,77.8],18:[67.0,72.7,80.0,81.9,84.9],24:[74.0,80.4,88.2,90.3,93.9]
+  };
+
+  function whoInterp(table, month) {
+    const keys = Object.keys(table).map(Number).sort((a,b)=>a-b);
+    if (month <= keys[0]) return table[keys[0]];
+    if (month >= keys[keys.length - 1]) return table[keys[keys.length - 1]];
+    let lo = keys[0];
+    for (const k of keys) { if (k <= month) lo = k; else break; }
+    const hi = keys[keys.indexOf(lo) + 1];
+    const t = (month - lo) / (hi - lo);
+    return table[lo].map((v, i) => v + (table[hi][i] - v) * t);
+  }
+
+  let whoMode = 'weight';
+  function renderWhoChart(mode) {
+    if (mode) whoMode = mode;
+    const tabW = document.getElementById('wt-tab-weight');
+    const tabH = document.getElementById('wt-tab-height');
+    if (tabW) { tabW.classList.toggle('active', whoMode === 'weight'); tabH.classList.toggle('active', whoMode === 'height'); }
+
+    const svg = document.getElementById('who-chart');
+    if (!svg) return;
+    const W = 340, H = 200, padL = 30, padR = 8, padT = 10, padB = 22;
+    const maxAge = 24;
+
+    const points = state.growths
+      .map(g => {
+        const age = getAgeStats(new Date(g.date + 'T00:00:00'));
+        if (!age || age.isFuture) return null;
+        return { m: age.diffDays / 30.44, v: whoMode === 'weight' ? g.weight_kg : g.height_cm };
+      })
+      .filter(p => p && p.v)
+      .sort((a, b) => a.m - b.m);
+
+    const table = whoMode === 'weight' ? WHO_WEIGHT : WHO_HEIGHT;
+    const allVals = [];
+    for (let m = 0; m <= maxAge; m += 0.5) allVals.push(...whoInterp(table, m));
+    const minV = Math.min(...allVals, ...points.map(p => p.v)) * 0.98;
+    const maxV = Math.max(...allVals, ...points.map(p => p.v)) * 1.02;
+    const x = m => padL + (m / maxAge) * (W - padL - padR);
+    const y = v => padT + (1 - (v - minV) / (maxV - minV)) * (H - padT - padB);
+
+    const band = (pctLo, pctHi, color, opacity) => {
+      let d = '';
+      for (let m = 0; m <= maxAge; m += 1) d += (d ? ' L' : 'M') + x(m).toFixed(1) + ',' + y(whoInterp(table, m)[pctHi]).toFixed(1);
+      for (let m = maxAge; m >= 0; m -= 1) d += ' L' + x(m).toFixed(1) + ',' + y(whoInterp(table, m)[pctLo]).toFixed(1);
+      return `<path d="${d} Z" fill="${color}" opacity="${opacity}" stroke="none"/>`;
+    };
+    let med = '';
+    for (let m = 0; m <= maxAge; m += 1) med += (med ? ' L' : 'M') + x(m).toFixed(1) + ',' + y(whoInterp(table, m)[2]).toFixed(1);
+    const median = `<path d="${med}" fill="none" stroke="#4E6335" stroke-width="1.5"/>`;
+
+    let gridLines = '';
+    for (let m = 0; m <= maxAge; m += 6) {
+      gridLines += `<line x1="${x(m)}" y1="${padT}" x2="${x(m)}" y2="${H - padB}" stroke="var(--border)" stroke-width="0.5"/><text x="${x(m)}" y="${H - 8}" font-size="9" fill="var(--muted)" text-anchor="middle">${m} м</text>`;
+    }
+    const vTicks = 4;
+    for (let i = 0; i <= vTicks; i++) {
+      const v = minV + (maxV - minV) * i / vTicks;
+      gridLines += `<text x="${padL - 3}" y="${y(v) + 3}" font-size="9" fill="var(--muted)" text-anchor="end">${Math.round(v * 10) / 10}</text>`;
+    }
+
+    let userLine = '';
+    if (points.length === 1) {
+      userLine = `<circle cx="${x(points[0].m)}" cy="${y(points[0].v)}" r="4" fill="var(--olive)"/>`;
+    } else if (points.length > 1) {
+      userLine = `<path d="${points.map((p, i) => (i ? 'L' : 'M') + x(p.m).toFixed(1) + ',' + y(p.v).toFixed(1)).join(' ')}" fill="none" stroke="var(--olive)" stroke-width="2.5"/>`;
+      userLine += points.map(p => `<circle cx="${x(p.m)}" cy="${y(p.v)}" r="3" fill="var(--olive)"/>`).join('');
+    }
+
+    let status = '';
+    if (points.length > 0) {
+      const last = points[points.length - 1];
+      const bands = whoInterp(table, last.m);
+      let pos;
+      if (last.v < bands[0]) pos = 'ниже коридора (3%) — покажите педиатру';
+      else if (last.v < bands[1]) pos = 'в коридоре 3–15%';
+      else if (last.v <= bands[3]) pos = 'в норме (15–85%)';
+      else if (last.v <= bands[4]) pos = 'в коридоре 85–97%';
+      else pos = 'выше коридора (97%) — покажите педиатру';
+      status = `Последний замер (${whoMode === 'weight' ? 'вес' : 'рост'} ${last.v}): ${pos}.`;
+    } else {
+      status = 'Добавьте замеры — и линия появится на графике.';
+    }
+    const statusEl = document.getElementById('who-status');
+    if (statusEl) statusEl.textContent = status;
+
+    svg.innerHTML = band(0, 4, '#E8D5C0', 0.5) + band(1, 3, '#D9C89E', 0.65) + median + gridLines + userLine;
+  }
+
+  // ============ МЕДАЛИ РАЗВИТИЯ ============
+  function renderMedals() {
+    const medalsEl = document.getElementById('medals-list');
+    const card = document.getElementById('medals-card');
+    if (!medalsEl || !card) return;
+    const byMonth = {};
+    DEFAULT_SKILLS.forEach(s => { (byMonth[s.month] = byMonth[s.month] || []).push(s); });
+    const earned = [];
+    Object.entries(byMonth).forEach(([m, skills]) => {
+      if (skills.every(s => state.skills[s.id] && state.skills[s.id].done)) earned.push(`${m} мес.`);
+    });
+    if (earned.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    medalsEl.innerHTML = earned.map(m => `<div class="medal">🏅 Освоил ${m}!</div>`).join('');
+  }
+
+  // ============ ЗДОРОВЬЕ ============
+  function addHealthRecord() {
+    const timeVal = document.getElementById('h-time').value;
+    if (!timeVal) return alert('Укажите время');
+    const temp = document.getElementById('h-temp').value;
+    const med = document.getElementById('h-med').value.trim();
+    const note = document.getElementById('h-note').value.trim();
+    if (!temp && !med && !note) return alert('Заполните хотя бы одно поле');
+    state.healthRecords.unshift({ id: String(Date.now()), time: new Date(timeVal).toISOString(), temp: temp ? parseFloat(temp) : null, med, note });
+    saveState(); renderHealth(); renderDayTimeline();
+  }
+  function deleteHealthRecord(id) {
+    if (!confirm('Удалить запись?')) return;
+    state.healthRecords = state.healthRecords.filter(h => h.id !== id);
+    saveState(); renderHealth(); renderDayTimeline();
+  }
+  function renderHealth() {
+    const list = document.getElementById('health-list');
+    const chartCard = document.getElementById('temp-chart-card');
+    if (!list) return;
+    const sorted = [...state.healthRecords].sort((a, b) => new Date(b.time) - new Date(a.time));
+    if (sorted.length === 0) {
+      list.innerHTML = '<div class="item-sub" style="text-align:center;">Записей пока нет</div>';
+      if (chartCard) chartCard.style.display = 'none';
+      return;
+    }
+    const timeInput = document.getElementById('h-time');
+    if (timeInput && !timeInput.value) timeInput.value = toLocalInputStr(new Date().toISOString());
+
+    list.innerHTML = sorted.map(h => {
+      const parts = [];
+      if (h.temp) parts.push(`🌡️ ${h.temp}°`);
+      if (h.med) parts.push(`💊 ${h.med}`);
+      if (h.note) parts.push(`📝 ${h.note}`);
+      return `
+        <div class="list-item">
+          <div>
+            <div class="item-main">${parts.join(' • ') || '🩺 Запись'}</div>
+            <div class="item-sub">${formatDate(h.time)} • ${formatTime(h.time)}</div>
+          <button class="act-btn del" onclick="deleteHealthRecord('${h.id}')">✕</button>
+        </div>`;
+    }).join('');
+
+    const temps = sorted.filter(h => h.temp).slice(0, 12).reverse();
+    if (temps.length >= 2 && chartCard) {
+      chartCard.style.display = 'block';
+      const W = 340, H = 160, padL = 26, padR = 8, padT = 10, padB = 20;
+      const vals = temps.map(t => t.temp);
+      const minV = Math.min(...vals) - 0.3, maxV = Math.max(...vals) + 0.3;
+      const x = i => padL + i * (W - padL - padR) / (temps.length - 1);
+      const y = v => padT + (1 - (v - minV) / (maxV - minV)) * (H - padT - padB);
+      let html = '';
+      [37, 38, 39].filter(v => v >= minV && v <= maxV).forEach(v => {
+        html += `<line x1="${padL}" y1="${y(v)}" x2="${W - padR}" y2="${y(v)}" stroke="var(--border)" stroke-width="0.5"/><text x="${padL - 3}" y="${y(v) + 3}" font-size="9" fill="var(--muted)" text-anchor="end">${v}°</text>`;
+      });
+      html += `<path d="${temps.map((t, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(t.temp).toFixed(1)).join(' ')}" fill="none" stroke="var(--danger)" stroke-width="2"/>`;
+      html += temps.map((t, i) => `<circle cx="${x(i)}" cy="${y(t.temp)}" r="3" fill="var(--danger)"/>`).join('');
+      html += `<text x="${padL}" y="${H - 6}" font-size="9" fill="var(--muted)">${formatTime(temps[0].time)}</text>`;
+      html += `<text x="${W - padR}" y="${H - 6}" font-size="9" fill="var(--muted)" text-anchor="end">${formatTime(temps[temps.length - 1].time)}</text>`;
+      document.getElementById('temp-chart').innerHTML = html;
+    } else if (chartCard) chartCard.style.display = 'none';
+  }
+
   renderProfileAndReminders();
+  renderDayTimeline();
+  renderAgeCounter();
   renderEvents();
   renderSleep();
   renderFeed();
@@ -3099,6 +3646,7 @@
   renderGrowth();
   renderAllergens();
   renderSkills();
+  renderMedals();
   renderTeeth();
   renderVaccines();
   renderWalks();
@@ -3106,8 +3654,11 @@
   renderBabyMoods();
   renderGallery();
   renderNotificationsPage();
+  applyTheme(state.theme);
+  renderWhoChart();
   initNotifications();
   fetchWeather();
+  checkBackupAge();
 </script>
 </body>
 </html>
