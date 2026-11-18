@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#F5EFE5">
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Дневник малыша","short_name":"Дневник","start_url":".","display":"standalone","background_color":"%23F5EFE5","theme_color":"%237B925E","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%91%B6%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml"}]}'>
   <title>Дневник малыша</title>
   <style>
     :root {
@@ -232,6 +233,20 @@
     body.dark .weather-tip, body.dark input, body.dark select { background: var(--tile); }
     body.dark .b-date { background: #2A3242; color: #9FB8E8; }
     body.dark .b-ok, body.dark .delta-pill, body.dark .hint-pill, body.dark .reminder-pill, body.dark .skill-date, body.dark .tooth-date, body.dark .vaccine-date { color: #C4D9A8; }
+    body.dark .btn-dark { background: #4A4E44; color: #EDEFE8; }
+    body.dark .sheet-close { background: #4A4E44; color: #EDEFE8; }
+    body.dark .weather-tab.active { background: #4A4E44; color: #EDEFE8; }
+    body.dark .btn-light, body.dark .btn-pill, body.dark .act-btn, body.dark .diaper-btn, body.dark .mood-btn, body.dark .chip, body.dark .routine-cell { color: var(--text); }
+    body.dark .medal { background: linear-gradient(135deg, #4A4125, #5C5030); color: #F0D98C; }
+    body.dark .tl-item::before { border-color: var(--card); }
+
+    /* Баннер-напоминание (работает без разрешения браузера) */
+    .app-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--olive); color: #fff; padding: 12px 16px; display: none; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 500px; margin: 0 auto; border-radius: 0 0 14px 14px; animation: slideDown 0.25s ease-out; }
+    .app-banner.show { display: flex; }
+    .app-banner-txt { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.3; }
+    .app-banner-sub { font-size: 12px; font-weight: 500; opacity: 0.85; }
+    .app-banner-close { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 15px; cursor: pointer; flex-shrink: 0; }
+    @keyframes slideDown { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
     /* ===== ХРОНИКА ДНЯ ===== */
     .age-counter { text-align: center; background: var(--card); border-radius: 22px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
@@ -260,6 +275,15 @@
   </style>
 </head>
 <body>
+
+  <!-- Баннер напоминаний (виден всегда, работает без разрешения браузера) -->
+  <div id="app-banner" class="app-banner">
+    <div class="app-banner-txt">
+      <div id="banner-title"></div>
+      <div class="app-banner-sub" id="banner-sub"></div>
+    </div>
+    <button class="app-banner-close" onclick="closeBanner()">✕</button>
+  </div>
 
   <div class="top-bar">
     <div>
@@ -298,10 +322,11 @@
     </div>
 
     <div class="info-card" id="home-reminder-card">
-      <div class="info-tag" id="home-rem-tag">Питание и прикорм</div>
-      <div class="info-title" id="home-rem-title">Календарь аллергенов</div>
-      <div class="info-desc" id="home-rem-desc">Укажите дату рождения малыша или дату разрешенного ввода для продуктов.</div>
+      <div class="info-tag" id="home-rem-tag">Режим дня</div>
+      <div class="info-title" id="home-rem-title">Что пора сделать</div>
+      <div class="info-desc" id="home-rem-desc">Заполните профиль и запишите первое событие.</div>
       <button class="btn-dark" id="home-rem-btn" onclick="handleHomeReminderBtn()">Открыть раздел</button>
+      <div id="home-rem-extra"></div>
     </div>
 
     <div class="sec-heading">Сегодня</div>
@@ -330,7 +355,7 @@
         </div>
       </div>
 
-      <div class="tracker-tile" onclick="openTab('walks')">
+      <div class="tracker-tile" id="tile-walk" onclick="toggleWalkQuick()">
         <div class="tile-icon">🚶</div>
         <div>
           <div class="tile-title">Прогулки</div>
@@ -539,6 +564,7 @@
       </div>
     </div>
     <div class="item-sub" style="margin-bottom:8px;">Нажмите на продукт для мини-опроса.</div>
+    <div class="info-card" id="allergen-reminder" style="display:none; background:var(--warn-bg);"></div>
     <div id="allergen-list"></div>
   </div>
 
@@ -724,6 +750,7 @@
 
     <div class="info-card">
       <div class="info-title" style="font-size:17px;">Что напоминать</div>
+      <div class="item-sub" style="margin-bottom:6px;">Напоминания появляются баннером в приложении всегда, а системными пушами — если разрешите их ниже.</div>
 
       <div class="toggle-row">
         <div class="toggle-info">
@@ -747,6 +774,22 @@
           <div class="toggle-sub">Днём, если давно не выходили гулять</div>
         </div>
         <label class="toggle"><input type="checkbox" id="toggle-notify-walk" onchange="toggleNotifySetting('notifyWalk', this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">💧 Вода</div>
+          <div class="toggle-sub">Раз в час днём (8:00–21:00)</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="toggle-notify-water" onchange="toggleNotifySetting('notifyWater', this.checked)"><span class="toggle-slider"></span></label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">🌙 Сон</div>
+          <div class="toggle-sub">Когда малыш бодрствует дольше своего окна</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="toggle-notify-sleep" onchange="toggleNotifySetting('notifySleep', this.checked)"><span class="toggle-slider"></span></label>
       </div>
     </div>
 
@@ -835,11 +878,11 @@
             <div class="tile-sub">Перейти в раздел</div>
           </div>
         </div>
-        <div class="tracker-tile" onclick="closeQuickSheet(); toggleWalkQuick();">
+        <div class="tracker-tile" onclick="closeQuickSheet(); openTab('walks');">
           <div class="tile-icon">🚶</div>
           <div>
-            <div class="tile-title" id="sheet-walk-title">Прогулка</div>
-            <div class="tile-sub" id="sheet-walk-sub">Начать / стоп</div>
+            <div class="tile-title">Прогулки</div>
+            <div class="tile-sub">Перейти в раздел</div>
           </div>
         </div>
         <div class="tracker-tile" onclick="closeQuickSheet(); openTab('gallery');">
@@ -1379,6 +1422,7 @@
     walks: oldData.walks || [],
     momMoods: oldData.momMoods || [],
     babyMoods: oldData.babyMoods || [],
+    skillsLog: oldData.skillsLog || [],
     feedReminderMins: oldData.feedReminderMins || 180,
     walkReminderHours: oldData.walkReminderHours || 4,
     photos: oldData.photos || [],
@@ -1387,6 +1431,10 @@
     notifyWalk: oldData.notifyWalk !== false,
     lastNotifiedFeed: oldData.lastNotifiedFeed || '',
     lastNotifiedWalk: oldData.lastNotifiedWalk || '',
+    lastNotifiedWater: oldData.lastNotifiedWater || '',
+    lastNotifiedSleep: oldData.lastNotifiedSleep || '',
+    notifyWater: oldData.notifyWater !== false,
+    notifySleep: oldData.notifySleep !== false,
     solids: oldData.solids || [],
     healthRecords: oldData.healthRecords || [],
     theme: oldData.theme || 'light',
@@ -1563,6 +1611,9 @@
       const info = BABY_MOODS[m.mood] || { emoji: '❔', label: '' };
       items.push({ t: m.date, txt: `🙂 Настроение: ${info.label}` });
     });
+    (state.skillsLog || []).filter(s => new Date(s.date).toDateString() === todayStr).forEach(s => {
+      items.push({ t: s.date, txt: `🧠 Освоен навык: ${s.title || ''}` });
+    });
 
     items.sort((a, b) => new Date(a.t) - new Date(b.t));
     if (items.length === 0) {
@@ -1645,58 +1696,108 @@
     document.getElementById('baby-age-display').textContent = ageText;
     document.getElementById('sheet-baby-age').textContent = ageText;
 
+    // Главный экран: подсказка «что сейчас пора делать» (кормить / гулять / спать / поить)
     const tag = document.getElementById('home-rem-tag');
     const title = document.getElementById('home-rem-title');
     const desc = document.getElementById('home-rem-desc');
     const btn = document.getElementById('home-rem-btn');
+    const suggestions = [];
 
-    const trying = state.allergens.find(a => a.status === 'try');
-    if (trying) {
-      suggestedAllergenId = trying.id;
-      tag.textContent = 'Идет ввод продукта';
-      title.textContent = `Пробуем: ${trying.name}`;
-      desc.textContent = trying.hint || 'Нажмите, чтобы обновить статус.';
-      btn.textContent = 'Обновить статус';
+    // Кормление
+    const lastFeed = state.feeds.filter(f => f.type !== 'refusal' && (f.start_time || f.time)).sort((a, b) => new Date(b.start_time || b.time) - new Date(a.start_time || a.time))[0];
+    if (lastFeed) {
+      const mins = Math.round((Date.now() - new Date(lastFeed.start_time || lastFeed.time)) / 60000);
+      const left = state.feedReminderMins - mins;
+      suggestions.push(left <= 0
+        ? { icon: '🍼', title: 'Пора кормить!', desc: `Прошло ${mins} мин с последнего кормления`, tab: 'feed', btn: 'К кормлению' }
+        : { icon: '🍼', title: `Кормление через ${left} мин`, desc: `Последнее было в ${formatTime(lastFeed.start_time || lastFeed.time)}`, tab: 'feed', btn: 'К кормлению' });
+    }
+    // Прогулка
+    const lastWalk = [...state.walks].sort((a, b) => new Date(b.end_time || b.start_time) - new Date(a.end_time || a.start_time))[0];
+    if (lastWalk) {
+      const hrs = (Date.now() - new Date(lastWalk.end_time || lastWalk.start_time).getTime()) / 3600000;
+      if (hrs >= state.walkReminderHours) suggestions.push({ icon: '🚶', title: 'Пора на прогулку!', desc: `Прошло ${Math.round(hrs)} ч с последней прогулки`, tab: 'walks', btn: 'К прогулкам' });
+    }
+    // Сон
+    const awake = state.sleeps.filter(s => s.end_time).sort((a, b) => new Date(b.end_time) - new Date(a.end_time))[0];
+    if (awake && !state.sleeps.find(s => !s.end_time) && age && !age.isFuture) {
+      const ww = getRecommendedWakeWindowMins(age.months);
+      const awakeMins = Math.round((Date.now() - new Date(awake.end_time)) / 60000);
+      if (awakeMins >= ww.min) suggestions.push({ icon: '🌙', title: awakeMins >= ww.max ? 'Срочно пора спать!' : `Укладывать через ${ww.max - awakeMins} мин`, desc: `Бодрствует ${awakeMins} мин (окно ${ww.min}–${ww.max})`, tab: 'sleep', btn: 'К сну' });
+    }
+    // Подгузник — давно не меняли
+    const lastDiaper = [...state.diapers].sort((a, b) => new Date(b.time) - new Date(a.time))[0];
+    if (lastDiaper) {
+      const hrs = (Date.now() - new Date(lastDiaper.time).getTime()) / 3600000;
+      if (hrs >= 3) suggestions.push({ icon: '🧷', title: 'Давно не меняли подгузник', desc: `Последняя замена ${formatTime(lastDiaper.time)} (${Math.round(hrs)} ч назад)`, tab: 'diaper', btn: 'Отметить' });
+    }
+
+    if (suggestions.length > 0) {
+      // показываем самую срочную (кормление с просрочкой или сон — первыми)
+      const top = suggestions.find(s => s.title.includes('!')) || suggestions[0];
+      tag.textContent = 'Что пора сделать';
+      title.textContent = `${top.icon} ${top.title}`;
+      desc.textContent = top.desc;
+      btn.textContent = top.btn;
+      homeReminderTab = top.tab;
+      renderExtraSuggestions(suggestions.filter(s => s !== top));
       return;
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const byDateReady = state.allergens.find(a => a.status === 'none' && a.allowDate && a.allowDate <= todayStr);
-    if (byDateReady) {
-      suggestedAllergenId = byDateReady.id;
-      tag.textContent = `Пора вводить (с ${formatDate(byDateReady.allowDate)})`;
-      title.textContent = byDateReady.name;
-      desc.textContent = byDateReady.hint || 'Наступила запланированная дата.';
-      btn.textContent = 'Отметить ввод';
-      return;
-    }
+    homeReminderTab = 'feed';
+    tag.textContent = 'Всё хорошо';
+    title.textContent = '✨ Всё вовремя';
+    desc.textContent = 'Кормления, прогулки и сон — по графику. Данных пока мало? Запишите их прямо сейчас.';
+    btn.textContent = 'Записать событие';
+    renderExtraSuggestions([]);
+  }
 
-    if (age && !age.isFuture) {
-      const byAgeReady = state.allergens.find(a => {
-        if (a.status !== 'none' || a.allowDate) return false;
-        const sec = state.sections.find(s => s.id === a.sectionId);
-        return sec && age.months >= (sec.minMonths || 6);
-      });
-      if (byAgeReady) {
-        suggestedAllergenId = byAgeReady.id;
-        tag.textContent = `Пора вводить (${age.months} мес.)`;
-        title.textContent = byAgeReady.name;
-        desc.textContent = byAgeReady.hint;
-        btn.textContent = 'Отметить ввод';
-        return;
-      }
-    }
-
-    suggestedAllergenId = null;
-    tag.textContent = 'Питание и прикорм';
-    title.textContent = 'Аллергены и продукты';
-    desc.textContent = 'Добавляйте свои разделы, продукты и даты.';
-    btn.textContent = 'Открыть раздел';
+  let homeReminderTab = 'feed';
+  function renderExtraSuggestions(list) {
+    const el = document.getElementById('home-rem-extra');
+    if (!el) return;
+    el.innerHTML = list.map(s => `
+      <div class="list-item" style="margin-top:10px; cursor:pointer;" onclick="openTab('${s.tab}')">
+        <div>
+          <div class="item-main" style="font-size:15px;">${s.icon} ${s.title}</div>
+          <div class="item-sub">${s.desc}</div>
+        </div>
+        <div class="item-sub">›</div>
+      </div>
+    `).join('');
   }
 
   function handleHomeReminderBtn() {
-    openTab('allergens');
-    if (suggestedAllergenId) openAllergenModal(suggestedAllergenId);
+    openTab(homeReminderTab || 'feed');
+  }
+
+  // ============ НАПОМИНАНИЯ ОБ АЛЛЕРГЕНАХ (внутри раздела) ============
+  function renderAllergenReminder() {
+    const box = document.getElementById('allergen-reminder');
+    if (!box) return;
+    const trying = state.allergens.find(a => a.status === 'try');
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const byDate = state.allergens.find(a => a.status === 'none' && a.allowDate && a.allowDate <= todayStr);
+    let target = trying || byDate;
+    if (!target) {
+      const age = getAgeStats();
+      if (age && !age.isFuture) {
+        target = state.allergens.find(a => {
+          if (a.status !== 'none' || a.allowDate) return false;
+          const sec = state.sections.find(s => s.id === a.sectionId);
+          return sec && age.months >= (sec.minMonths || 6);
+        });
+      }
+    }
+    if (!target) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    const isTry = target.status === 'try';
+    box.innerHTML = `
+      <div class="info-tag">${isTry ? 'Идет ввод продукта' : 'Пора вводить'}</div>
+      <div class="info-title" style="font-size:18px;">${target.name}</div>
+      <div class="info-desc" style="margin-bottom:10px;">${target.hint || 'Нажмите, чтобы обновить статус.'}</div>
+      <button class="btn-olive" onclick="openAllergenModal('${target.id}')">${isTry ? 'Обновить статус' : 'Отметить ввод'}</button>
+    `;
   }
 
   function openProfileModal() {
@@ -2656,6 +2757,7 @@
 
   // ============ АЛЛЕРГЕНЫ ============
   function renderAllergens() {
+    renderAllergenReminder();
     const okCount = state.allergens.filter(a => a.status === 'ok').length;
     setTxt('tile-allergen-sub', `${okCount} из ${state.allergens.length} введено`);
     const stMap = {
@@ -2817,12 +2919,18 @@
       });
     });
     document.getElementById('skills-list').innerHTML = html;
+    renderMedals();
   }
   function toggleSkill(id) {
     const rec = state.skills[id];
-    if (rec && rec.done) delete state.skills[id];
-    else state.skills[id] = { done: true, date: new Date().toISOString().slice(0, 10) };
-    saveState(); renderSkills();
+    if (rec && rec.done) {
+      delete state.skills[id];
+    } else {
+      state.skills[id] = { done: true, date: new Date().toISOString().slice(0, 10) };
+      const skill = DEFAULT_SKILLS.find(s => s.id === id);
+      state.skillsLog.unshift({ id: String(Date.now()), skillId: id, title: skill ? skill.title : '', date: new Date().toISOString() });
+    }
+    saveState(); renderSkills(); renderDayTimeline();
   }
   function openSkillDateModal(id) {
     editingSkillId = id;
@@ -3314,10 +3422,9 @@
 
   function checkNotifications() {
     if (!state.notificationsEnabled) return;
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-
     const now = Date.now();
 
+    // ---------- Кормление ----------
     if (state.notifyFeed) {
       const recentFeeds = state.feeds.filter(f => f.type !== 'refusal' && (f.start_time || f.time));
       if (recentFeeds.length > 0) {
@@ -3326,13 +3433,14 @@
         const elapsed = Math.round((now - lastTime) / 60000);
         const key = 'feed_' + last.id;
         if (elapsed >= state.feedReminderMins && state.lastNotifiedFeed !== key) {
-          sendNotification('🍼 Пора кормить!', `Прошло ${elapsed} мин с последнего кормления`);
+          notify('🍼 Пора кормить!', `Прошло ${elapsed} мин с последнего кормления`);
           state.lastNotifiedFeed = key;
           saveState();
         }
       }
     }
 
+    // ---------- Прогулка ----------
     if (state.notifyWalk) {
       const hour = new Date().getHours();
       if (hour >= 9 && hour < 19) {
@@ -3347,12 +3455,61 @@
         const todayKey = 'walk_' + new Date().toDateString() + '_' + Math.floor(hour / state.walkReminderHours);
         if (elapsed >= threshold && state.lastNotifiedWalk !== todayKey) {
           const hours = Math.round(elapsed / 3600000);
-          sendNotification('🚶 Пора на прогулку!', lastWalkTime ? `Прошло ${hours} ч с последней прогулки` : 'Сегодня ещё не гуляли');
+          notify('🚶 Пора на прогулку!', lastWalkTime ? `Прошло ${hours} ч с последней прогулки` : 'Сегодня ещё не гуляли');
           state.lastNotifiedWalk = todayKey;
           saveState();
         }
       }
     }
+
+    // ---------- Вода (раз в 2 часа днём) ----------
+    const hourNow = new Date().getHours();
+    if (state.notifyWater && hourNow >= 8 && hourNow < 21) {
+      const slotKey = 'water_' + new Date().toDateString() + '_' + hourNow;
+      if (state.lastNotifiedWater !== slotKey) {
+        notify('💧 Не забудьте напоить малыша', 'Предложите водичку или компот');
+        state.lastNotifiedWater = slotKey;
+        saveState();
+      }
+    }
+
+    // ---------- Сон (если не спит дольше окна бодрствования) ----------
+    if (state.notifySleep) {
+      const activeSleep = state.sleeps.find(s => !s.end_time);
+      const lastWake = state.sleeps.filter(s => s.end_time).sort((a, b) => new Date(b.end_time) - new Date(a.end_time))[0];
+      if (!activeSleep && lastWake) {
+        const awakeMs = now - new Date(lastWake.end_time).getTime();
+        const age = getAgeStats();
+        if (age && !age.isFuture) {
+          const ww = getRecommendedWakeWindowMins(age.months);
+          if (awakeMs > ww.max * 60000 && state.lastNotifiedSleep !== lastWake.id) {
+            notify('🌙 Пора укладывать спать', `Бодрствует уже ${Math.round(awakeMs / 60000)} мин — окно ${ww.min}–${ww.max} мин`);
+            state.lastNotifiedSleep = lastWake.id;
+            saveState();
+          }
+        }
+      }
+    }
+  }
+
+  // Единая точка: системное уведомление (если разрешено) ИЛИ баннер на экране
+  function notify(title, body) {
+    showBanner(title, body);
+    sendNotification(title, body);
+  }
+
+  function showBanner(title, body) {
+    const b = document.getElementById('app-banner');
+    if (!b) return;
+    document.getElementById('banner-title').textContent = title;
+    document.getElementById('banner-sub').textContent = body;
+    b.classList.add('show');
+    clearTimeout(b._hideT);
+    b._hideT = setTimeout(closeBanner, 20000);
+  }
+  function closeBanner() {
+    const b = document.getElementById('app-banner');
+    if (b) b.classList.remove('show');
   }
 
   function initNotifications() {
@@ -3394,6 +3551,8 @@
     document.getElementById('toggle-notif-enabled').checked = state.notificationsEnabled;
     document.getElementById('toggle-notify-feed').checked = state.notifyFeed;
     document.getElementById('toggle-notify-walk').checked = state.notifyWalk;
+    document.getElementById('toggle-notify-water').checked = state.notifyWater !== false;
+    document.getElementById('toggle-notify-sleep').checked = state.notifySleep !== false;
     document.getElementById('notif-feed-interval').value = state.feedReminderMins;
     document.getElementById('notif-walk-interval').value = state.walkReminderHours;
   }
@@ -3564,13 +3723,17 @@
     if (!medalsEl || !card) return;
     const byMonth = {};
     DEFAULT_SKILLS.forEach(s => { (byMonth[s.month] = byMonth[s.month] || []).push(s); });
-    const earned = [];
+    const earned = [], next = [];
     Object.entries(byMonth).forEach(([m, skills]) => {
-      if (skills.every(s => state.skills[s.id] && state.skills[s.id].done)) earned.push(`${m} мес.`);
+      const done = skills.filter(s => state.skills[s.id] && state.skills[s.id].done).length;
+      if (done === skills.length) earned.push(`${m} мес.`);
+      else if (done > 0) next.push(`${done}/${skills.length} — ${m} мес.`);
     });
-    if (earned.length === 0) { card.style.display = 'none'; return; }
+    if (earned.length === 0 && next.length === 0) { card.style.display = 'none'; return; }
     card.style.display = 'block';
-    medalsEl.innerHTML = earned.map(m => `<div class="medal">🏅 Освоил ${m}!</div>`).join('');
+    let html = earned.map(m => `<div class="medal">🏅 Освоил ${m}!</div>`).join('');
+    if (next.length > 0) html += `<div class="medal" style="background:var(--tile); color:var(--muted);">⏳ В процессе: ${next.join(', ')}</div>`;
+    medalsEl.innerHTML = html;
   }
 
   // ============ ЗДОРОВЬЕ ============
