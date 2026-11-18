@@ -283,6 +283,10 @@
     .h-line-time { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 44px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
     .h-line-body { flex: 1; min-width: 0; }
     .h-line .act-btn { width: 26px; height: 26px; font-size: 12px; flex-shrink: 0; }
+
+    /* ===== КОПИРАЙТ ===== */
+    .copyright-note { text-align: center; font-size: 10px; color: var(--card); margin-top: 8px; opacity: 0.55; user-select: none; }
+    body.dark .copyright-note { color: var(--tile); opacity: 0.25; }
   </style>
 </head>
 <body>
@@ -382,6 +386,8 @@
     <div class="info-card">
       <div class="timeline" id="day-timeline"></div>
     </div>
+
+    <div class="copyright-note">Сделанно компанией ООО"100% НЕ ИИ, БЛЯ БУДУ"</div>
   </div>
 
   <div id="page-sleep" class="page">
@@ -1679,7 +1685,15 @@
     if (age) {
       if (age.isFuture) ageText = `До рождения: ${age.daysLeft} дн.`;
       else if (age.months === 0) ageText = `${age.diffDays} дн. от рождения`;
-      else ageText = `${age.months} мес. ${age.remDays} дн.`;
+      else {
+        const y = Math.floor(age.months / 12);
+        const m = age.months % 12;
+        const parts = [];
+        if (y > 0) parts.push(`${y} г`);
+        if (m > 0) parts.push(`${m} мес`);
+        if (age.remDays > 0 || parts.length === 0) parts.push(`${age.remDays} дн`);
+        ageText = parts.join(' ');
+      }
     }
     document.getElementById('baby-age-display').textContent = ageText;
     document.getElementById('sheet-baby-age').textContent = ageText;
@@ -3820,6 +3834,11 @@
   initNotifications();
   fetchWeather();
   checkBackupAge();
+
+  // Регистрация Service Worker — только при размещении в интернете (не на file://)
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
+  }
 </script>
 </body>
 </html>
